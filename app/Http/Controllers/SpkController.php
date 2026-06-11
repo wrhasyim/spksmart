@@ -63,6 +63,19 @@ class SpkController extends Controller
             return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
         }
 
+        // ==========================================
+        // FITUR BARU: Validasi Siswa Tanpa Nilai
+        // ==========================================
+        // Cek apakah ada siswa di tahun ajaran aktif yang tabel assessment-nya tidak ada
+        $studentsWithoutAssessment = \App\Models\Student::where('academic_year_id', $activeYear->id)
+                                        ->doesntHave('assessment')
+                                        ->count();
+
+        if ($studentsWithoutAssessment > 0) {
+            return back()->with('error', 'Gagal memproses! Terdapat ' . $studentsWithoutAssessment . ' siswa yang belum memiliki nilai. Harap lengkapi nilai seluruh siswa terlebih dahulu di menu Data Siswa.');
+        }
+        // ==========================================
+
         try {
             $this->smartEngine->runMatchmaking($activeYear->id);
 
@@ -104,5 +117,24 @@ class SpkController extends Controller
 
         // Alirkan stream PDF langsung ke browser peninjau
         return $pdf->stream('Laporan_Penempatan_Prakerin_' . $safeYearName . '.pdf');
+    }
+    public function printLetter(Placement $placement)
+    {
+        // Pastikan siswa ini memang diterima di sebuah perusahaan
+        if (!$placement->company_id) {
+            return back()->with('error', 'Surat tidak dapat dicetak karena siswa belum mendapatkan penempatan.');
+        }
+
+        // Muat data relasi yang dibutuhkan untuk dicetak di surat
+        $placement->load(['student.major', 'company', 'academicYear']);
+
+        // Load view khusus surat
+        $pdf = Pdf::loadView('admin.placements.letter', compact('placement'));
+        
+        // Atur ukuran kertas ke A4 Portrait (Tegak)
+        $pdf->setPaper('a4', 'portrait');
+
+        // Alirkan stream PDF langsung ke browser
+        return $pdf->stream('Surat_Pengantar_' . str_replace(' ', '_', $placement->student->name) . '.pdf');
     }
 }

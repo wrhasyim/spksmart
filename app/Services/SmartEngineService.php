@@ -2,9 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Student;
+use App\Models\Assessment;
 use App\Models\Company;
 use App\Models\Placement;
+use App\Models\Student;
 use Illuminate\Support\Facades\DB;
 
 class SmartEngineService
@@ -56,7 +57,11 @@ class SmartEngineService
     {
         DB::beginTransaction();
         try {
+            // Hapus penempatan lama
             Placement::where('academic_year_id', $academicYearId)->delete();
+
+            // RESET STATUS SISWA KE DEFAULT 'belum_prakerin' YANG SAH SECARA ENUM
+            Student::where('academic_year_id', $academicYearId)->update(['status' => 'belum_prakerin']);
 
             $students = Student::where('academic_year_id', $academicYearId)
                 ->with(['assessment', 'major'])

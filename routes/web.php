@@ -28,6 +28,8 @@ Route::middleware(['auth'])->group(function () {
     
     // 👇 TAMBAHKAN BARIS INI UNTUK CETAK PDF 👇
     Route::get('/spk/print-pdf', [SpkController::class, 'printPdf'])->name('admin.spk.print');
+    // 👇 TAMBAHKAN BARIS INI 👇
+    Route::get('/spk/placement/{placement}/letter', [SpkController::class, 'printLetter'])->name('admin.spk.letter');
     
     // Manajemen Profil (Opsional, jika masih digunakan)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

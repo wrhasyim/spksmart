@@ -42,7 +42,7 @@
         
         <div class="flex gap-2">
             <a href="{{ route('admin.spk.print', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow font-bold transition flex items-center text-sm">
-                📄 Cetak PDF
+                📄 Cetak PDF Laporan
             </a>
             
             <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Menjalankan kalkulasi akan mereset data penempatan sebelumnya. Lanjutkan?')">
@@ -73,7 +73,7 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jurusan</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skor SMART</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penempatan Industri</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status & Dokumen</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -89,9 +89,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             @if($placement->company_id)
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                    Diterima
-                                </span>
+                                <div class="flex flex-col gap-2 items-start">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Diterima
+                                    </span>
+                                    <a href="{{ route('admin.spk.letter', $placement->id) }}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center">
+                                        📄 Cetak Surat Pengantar
+                                    </a>
+                                </div>
                             @else
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                                     Program Pembinaan
@@ -145,7 +150,6 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    // UBAH DI SINI: Menambahkan padding ekstra di bawah agar teks muat
                     layout: {
                         padding: {
                             bottom: 40 

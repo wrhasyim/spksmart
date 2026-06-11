@@ -20,4 +20,10 @@ class Placement extends Model
     {
         return $this->belongsTo(Company::class);
     }
+
+    // TAMBAHKAN FUNGSI RELASI INI
+    public function academicYear(): BelongsTo
+    {
+        return $this->belongsTo(AcademicYear::class);
+    }
 }
