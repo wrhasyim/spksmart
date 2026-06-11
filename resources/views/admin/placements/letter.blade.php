@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <title>Surat Pengantar Prakerin</title>
     <style>
-        body { font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.5; color: #000; margin: 20px 40px; }
+        /* UBAH FONT-FAMILY MENJADI TIMES-ROMAN */
+        body { font-family: 'Times-Roman', serif; font-size: 14px; line-height: 1.5; color: #000; margin: 20px 40px; }
+        
         .kop-surat { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
         .kop-surat h2, .kop-surat h3, .kop-surat p { margin: 0; }
         .kop-surat h2 { font-size: 20px; text-transform: uppercase; }
