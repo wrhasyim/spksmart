@@ -1,19 +1,32 @@
-// database/migrations/2026_01_01_000007_create_placements_table.php
-return new class extends Migration {
-    public function up(): void {
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('placements', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            // Relasi mengarah ke tabel students
+            $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             
-            // Jika NULL dan status user 'pembinaan', berarti masuk program pembinaan sekolah
+            // Jika NULL, berarti siswa gagal lolos syarat manapun -> Masuk Program Pembinaan
             $table->foreignId('company_id')->nullable()->constrained('companies')->onDelete('set null'); 
             
-            $table->float('final_smart_score');
+            $table->float('final_smart_score'); // Skor akhir persentase 0-100
             $table->enum('placement_method', ['SYSTEM', 'MANUAL_OVERRIDE'])->default('SYSTEM');
-            $table->text('notes')->nullable(); // Catatan jika masuk pembinaan atau kena veto
+            $table->text('notes')->nullable(); // Catatan pembinaan atau veto manual
+            
             $table->foreignId('academic_year_id')->constrained('academic_years')->onDelete('cascade');
             $table->timestamps();
         });
     }
-    public function down(): void { Schema::dropIfExists('placements'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('placements');
+    }
 };

@@ -1,17 +1,24 @@
-// database/migrations/2026_01_01_000004_create_companies_table.php
-return new class extends Migration {
-    public function up(): void {
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('address')->nullable();
+            $table->text('address')->nullable();
             $table->integer('quota');
             
             // Hard Filters
             $table->foreignId('major_id')->constrained('majors')->onDelete('cascade');
             $table->enum('gender_requirement', ['L', 'P', 'ALL'])->default('ALL');
             
-            // Passing Grades (Kriteria Khusus / Batas Minimum Nilai SMART)
+            // Passing Grades (Batas Minimum Nilai SMART untuk tiap perusahaan)
             $table->integer('min_total_score')->default(0);
             $table->integer('min_absensi_score')->default(0);
             $table->integer('min_fisik_score')->default(0);
@@ -22,5 +29,9 @@ return new class extends Migration {
             $table->timestamps();
         });
     }
-    public function down(): void { Schema::dropIfExists('companies'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('companies');
+    }
 };
