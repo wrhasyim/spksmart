@@ -46,20 +46,21 @@ class SpkController extends Controller
     }
 
     public function generate(Request $request)
-    {
-        $activeYear = AcademicYear::where('is_active', true)->first();
-        
-        if (!$activeYear) {
-            return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
-        }
-
-        try {
-            $this->smartEngine->runMatchmaking($activeYear->id);
-
-            return redirect()->route('admin.placements.index')
-                             ->with('success', 'Kalkulasi SPK dan pencocokan industri berhasil diselesaikan!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
-        }
+{
+    $activeYear = AcademicYear::where('is_active', true)->first();
+    
+    if (!$activeYear) {
+        return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
     }
+
+    try {
+        $this->smartEngine->runMatchmaking($activeYear->id);
+
+        // Ubah rute redirect ke 'dashboard'
+        return redirect()->route('dashboard')
+                         ->with('success', 'Kalkulasi SPK dan pencocokan industri berhasil diselesaikan!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+    }
+}
 }

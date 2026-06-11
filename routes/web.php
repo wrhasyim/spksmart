@@ -31,9 +31,12 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
+    // Manajemen Perusahaan Mitra Industri
     Route::get('/companies', [CompanyController::class, 'index'])->name('admin.companies.index');
     Route::get('/companies/create', [CompanyController::class, 'create'])->name('admin.companies.create');
     Route::post('/companies', [CompanyController::class, 'store'])->name('admin.companies.store');
+    Route::get('/companies/{company}/edit', [CompanyController::class, 'edit'])->name('admin.companies.edit');
+    Route::put('/companies/{company}', [CompanyController::class, 'update'])->name('admin.companies.update');
     Route::delete('/companies/{company}', [CompanyController::class, 'destroy'])->name('admin.companies.destroy');
 
     // Manajemen Tahun Ajaran
@@ -52,8 +55,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
     Route::put('/students/{student}/assessment', [AssessmentController::class, 'update'])->name('admin.students.assessment.update');
 
-    });
+});
 
 // MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
 // require __DIR__.'/auth.php';
-

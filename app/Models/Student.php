@@ -8,7 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Student extends Model
 {
-    protected $fillable = ['nisn', 'name', 'class', 'gender', 'major_id', 'academic_year_id', 'status'];
+    protected $fillable = [
+        'nisn', 
+        'name', 
+        'class', 
+        'final_score',
+        'gender', 
+        'major_id', 
+        'academic_year_id', 
+        'status'
+    ];
 
     public function major(): BelongsTo
     {
@@ -20,6 +29,7 @@ class Student extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
+    // PASTIKAN BLOK INI ADA
     public function assessment(): HasOne
     {
         return $this->hasOne(Assessment::class);

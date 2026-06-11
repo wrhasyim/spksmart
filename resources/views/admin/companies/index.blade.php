@@ -29,7 +29,7 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Kelola Data Perusahaan Mitra</h1>
-            <p class="text-sm text-gray-600">Daftar industri / perusahaan yang bekerja sama.</p>
+            <p class="text-sm text-gray-600">Daftar industri / perusahaan yang bekerja sama beserta pantauan sisa kuota.</p>
         </div>
         <a href="{{ route('admin.companies.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow font-bold transition">
             + Tambah Perusahaan
@@ -41,7 +41,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Perusahaan</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kuota</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status Kuota</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jurusan</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Syarat Gender</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Passing Grade (Total)</th>
@@ -55,15 +55,23 @@
                             {{ $company->name }}
                             <br><span class="text-xs text-gray-500">{{ $company->address }}</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $company->quota }} Siswa</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="font-bold text-gray-800">Master: {{ $company->quota }} Siswa</div>
+                            <div class="text-green-600 font-semibold text-xs mt-1">Terisi: {{ $company->placements_count ?? 0 }} Siswa</div>
+                            <div class="text-indigo-600 font-semibold text-xs">Sisa Kuota: {{ max(0, $company->quota - ($company->placements_count ?? 0)) }} Siswa</div>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $company->major->code }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $company->gender_requirement }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600">{{ $company->min_total_score }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
-                            <form action="{{ route('admin.companies.destroy', $company->id) }}" method="POST" onsubmit="return confirm('Hapus data perusahaan ini?')">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right space-x-2">
+                            <a href="{{ route('admin.companies.edit', $company->id) }}" class="text-indigo-600 hover:underline bg-indigo-50 px-3 py-1 rounded">
+                                Ubah
+                            </a>
+                            
+                            <form action="{{ route('admin.companies.destroy', $company->id) }}" method="POST" onsubmit="return confirm('Hapus data perusahaan ini?')" class="inline-block">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
+                                <button type="submit" class="text-red-600 hover:underline">Hapus</button>
                             </form>
                         </td>
                     </tr>

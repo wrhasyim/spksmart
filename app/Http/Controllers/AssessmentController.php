@@ -10,16 +10,18 @@ use Illuminate\Http\Request;
 class AssessmentController extends Controller
 {
     /**
-     * Form input nilai kriteria SMART untuk siswa tertentu
+     * Form input / ubah nilai kriteria SMART untuk siswa tertentu
      */
     public function edit(Student $student)
     {
-        $student->load('assessment');
+        // UBAH BARIS INI: Pastikan ejaannya 'assessment' (s-nya dobel di tengah)
+        $student->load('assessment'); 
+        
         return view('admin.students.assessment', compact('student'));
     }
 
     /**
-     * Simpan / Perbarui nilai kriteria SMART siswa
+     * Simpan / Perbarui nilai kriteria SMART siswa secara aman
      */
     public function update(Request $request, Student $student)
     {
@@ -33,13 +35,20 @@ class AssessmentController extends Controller
 
         $activeYear = AcademicYear::where('is_active', true)->first();
 
-        Assessment::updateOrCreate(
-            ['student_id' => $student->id],
-            array_merge($validated, [
-                'academic_year_id' => $activeYear ? $activeYear->id : null
-            ])
+        // Menggunakan updateOrCreate untuk mencegah error duplikasi data saat mengubah nilai lama
+        Assesment::updateOrCreate(
+            ['student_id' => $student->id], // Cari berdasarkan student_id
+            [
+                'absensi' => $validated['absensi'],
+                'fisik_mental' => $validated['fisik_mental'],
+                'keaktifan' => $validated['keaktifan'],
+                'catatan_kasus' => $validated['catatan_kasus'],
+                'administrasi' => $validated['administrasi'],
+                'academic_year_id' => $activeYear ? $activeYear->id : $student->academic_year_id
+            ]
         );
 
-        return redirect()->route('admin.students.index')->with('success', 'Nilai kriteria SMART berhasil disimpan untuk siswa ' . $student->name);
+        return redirect()->route('admin.students.index')
+                         ->with('success', 'Nilai parameter SMART berhasil disimpan untuk siswa ' . $student->name);
     }
 }

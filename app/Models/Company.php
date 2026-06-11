@@ -22,4 +22,8 @@ class Company extends Model
     {
         return $this->belongsTo(AcademicYear::class);
     }
+    public function placements()
+{
+    return $this->hasMany(Placement::class);
+}
 }
