@@ -9,18 +9,20 @@ use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
-    /**
-     * Tampilkan daftar perusahaan mitra
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $companies = Company::with(['major', 'academicYear'])->get();
-        return view('admin.companies.index', compact('companies'));
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
+        
+        $allYears = AcademicYear::all();
+
+        $companies = Company::with(['major', 'academicYear'])
+            ->where('academic_year_id', $selectedYearId)
+            ->get();
+
+        return view('admin.companies.index', compact('companies', 'allYears', 'selectedYearId'));
     }
 
-    /**
-     * Form tambah perusahaan
-     */
     public function create()
     {
         $majors = Major::all();
@@ -28,9 +30,6 @@ class CompanyController extends Controller
         return view('admin.companies.create', compact('majors', 'academicYears'));
     }
 
-    /**
-     * Simpan data perusahaan baru ke database
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -52,9 +51,6 @@ class CompanyController extends Controller
         return redirect()->route('admin.companies.index')->with('success', 'Perusahaan mitra berhasil ditambahkan.');
     }
 
-    /**
-     * Hapus perusahaan
-     */
     public function destroy(Company $company)
     {
         $company->delete();

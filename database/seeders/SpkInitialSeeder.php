@@ -46,10 +46,11 @@ class SpkInitialSeeder extends Seeder
             'academic_year_id' => $academicYear->id
         ]);
 
-        // 4. Buat Data Siswa
+        // 4. Buat Data Siswa Disertai Kelas
         $studentBudi = Student::create([
             'nisn' => '1234567891',
             'name' => 'Budi Santoso',
+            'class' => 'XII RPL 1',
             'gender' => 'L',
             'major_id' => $rpl->id,
             'academic_year_id' => $academicYear->id
@@ -58,6 +59,7 @@ class SpkInitialSeeder extends Seeder
         $studentSiti = Student::create([
             'nisn' => '1234567892',
             'name' => 'Siti Nurhaliza',
+            'class' => 'XII RPL 2',
             'gender' => 'P',
             'major_id' => $rpl->id,
             'academic_year_id' => $academicYear->id

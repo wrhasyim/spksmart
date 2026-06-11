@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\AssessmentController;
 
 // Halaman utama publik
 Route::get('/', function () {

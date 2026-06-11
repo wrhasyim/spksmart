@@ -9,10 +9,19 @@ use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $students = Student::with(['major', 'academicYear', 'assessment'])->get();
-        return view('admin.students.index', compact('students'));
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
+        
+        $allYears = AcademicYear::all();
+
+        // Ambil data siswa sesuai dengan tahun ajaran yang sedang dipilih/ditinjau
+        $students = Student::with(['major', 'academicYear', 'assessment'])
+            ->where('academic_year_id', $selectedYearId)
+            ->get();
+
+        return view('admin.students.index', compact('students', 'allYears', 'selectedYearId'));
     }
 
     public function create()
@@ -27,7 +36,7 @@ class StudentController extends Controller
         $validated = $request->validate([
             'nisn' => 'required|string|unique:students,nisn',
             'name' => 'required|string|max:255',
-            'class' => 'required|string|max:100', // Validasi input kelas
+            'class' => 'required|string|max:100',
             'gender' => 'required|in:L,P',
             'major_id' => 'required|exists:majors,id',
             'academic_year_id' => 'required|exists:academic_years,id',

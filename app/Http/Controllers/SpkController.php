@@ -17,28 +17,32 @@ class SpkController extends Controller
         $this->smartEngine = $smartEngine;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
+        
+        // Ambil ID tahun ajaran dari parameter GET, atau gunakan tahun ajaran aktif sebagai default
+        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
+        
+        $allYears = AcademicYear::all();
         
         $placements = [];
         $chartData = [];
 
-        if ($activeYear) {
-            $placements = Placement::where('academic_year_id', $activeYear->id)
+        if ($selectedYearId) {
+            $placements = Placement::where('academic_year_id', $selectedYearId)
                 ->with(['student.major', 'company'])
                 ->get();
 
-            // Query untuk mengambil data grafik: jumlah siswa per perusahaan
             $chartData = Placement::select('company_id', DB::raw('count(*) as total'))
                 ->whereNotNull('company_id')
-                ->where('academic_year_id', $activeYear->id)
+                ->where('academic_year_id', $selectedYearId)
                 ->with('company')
                 ->groupBy('company_id')
                 ->get();
         }
 
-        return view('admin.placements.index', compact('placements', 'activeYear', 'chartData'));
+        return view('admin.placements.index', compact('placements', 'activeYear', 'chartData', 'allYears', 'selectedYearId'));
     }
 
     public function generate(Request $request)
