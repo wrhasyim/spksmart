@@ -30,10 +30,13 @@ class SpkController extends Controller
         $chartData = [];
 
         if ($selectedYearId) {
+            // Membatasi tabel menjadi 5 siswa per halaman dan menyimpan parameter pencarian
             $placements = Placement::where('academic_year_id', $selectedYearId)
                 ->with(['student.major', 'company'])
-                ->get();
+                ->paginate(5)
+                ->withQueryString();
 
+            // Mengambil data untuk grafik tanpa pagination
             $chartData = Placement::select('company_id', DB::raw('count(*) as total'))
                 ->whereNotNull('company_id')
                 ->where('academic_year_id', $selectedYearId)
@@ -46,21 +49,21 @@ class SpkController extends Controller
     }
 
     public function generate(Request $request)
-{
-    $activeYear = AcademicYear::where('is_active', true)->first();
-    
-    if (!$activeYear) {
-        return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
-    }
+    {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        
+        if (!$activeYear) {
+            return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
+        }
 
-    try {
-        $this->smartEngine->runMatchmaking($activeYear->id);
+        try {
+            $this->smartEngine->runMatchmaking($activeYear->id);
 
-        // Ubah rute redirect ke 'dashboard'
-        return redirect()->route('dashboard')
-                         ->with('success', 'Kalkulasi SPK dan pencocokan industri berhasil diselesaikan!');
-    } catch (\Exception $e) {
-        return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+            // Redirect ke nama rute yang benar (dashboard)
+            return redirect()->route('dashboard')
+                             ->with('success', 'Kalkulasi SPK dan pencocokan industri berhasil diselesaikan!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+        }
     }
-}
 }
