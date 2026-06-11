@@ -5,36 +5,54 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\SmartEngineService;
 use App\Models\AcademicYear;
+use App\Models\Placement;
 
 class SpkController extends Controller
 {
     protected $smartEngine;
 
-    // Dependency Injection
     public function __construct(SmartEngineService $smartEngine)
     {
         $this->smartEngine = $smartEngine;
     }
 
     /**
-     * Eksekusi Kalkulasi SPK oleh Admin
+     * Halaman Dashboard Hasil Penempatan (Bisa diakses oleh Hubin)
      */
-    public function generatePlacement(Request $request)
+    public function index()
     {
-        // Pastikan hanya admin yang bisa mengeksekusi
-        $this->authorize('run-spk'); 
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        
+        // Ambil data penempatan yang sudah diproses beserta relasi student & company
+        $placements = [];
+        if ($activeYear) {
+            $placements = Placement::where('academic_year_id', $activeYear->id)
+                ->with(['student.major', 'company'])
+                ->get();
+        }
 
-        // Ambil tahun ajaran yang sedang aktif
-        $activeYear = AcademicYear::where('is_active', true)->firstOrFail();
+        return view('admin.placements.index', compact('placements', 'activeYear'));
+    }
+
+    /**
+     * Tombol Eksekusi Mesin SMART
+     */
+    public function generate(Request $request)
+    {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        
+        if (!$activeYear) {
+            return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
+        }
 
         try {
             // Panggil Service Engine
             $this->smartEngine->runMatchmaking($activeYear->id);
 
-            return redirect()->back()->with('success', 'Kalkulasi SPK berhasil dieksekusi. Hasil penempatan telah diperbarui.');
-            
+            return redirect()->route('admin.placements.index')
+                             ->with('success', 'Kalkulasi SPK dan pencocokan industri berhasil diselesaikan!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat kalkulasi: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
     }
 }

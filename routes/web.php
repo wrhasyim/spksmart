@@ -1,20 +1,46 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SpkController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\AcademicYearController;
 
+// Halaman utama publik
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Rute Autentikasi (Login/Logout menggunakan Username)
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::middleware('auth')->group(function () {
+// Rute yang diamankan (Wajib Login Hubin)
+Route::middleware(['auth'])->group(function () {
+    
+    // Dashboard utama penempatan SPK
+    Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
+    Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
+    
+    // Manajemen Profil (Opsional, jika masih digunakan)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    Route::get('/companies', [CompanyController::class, 'index'])->name('admin.companies.index');
+    Route::get('/companies/create', [CompanyController::class, 'create'])->name('admin.companies.create');
+    Route::post('/companies', [CompanyController::class, 'store'])->name('admin.companies.store');
+    Route::delete('/companies/{company}', [CompanyController::class, 'destroy'])->name('admin.companies.destroy');
+
+    // Manajemen Tahun Ajaran
+    Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('admin.academic-years.index');
+    Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('admin.academic-years.store');
+    Route::post('/academic-years/{academic_year}/set-active', [AcademicYearController::class, 'setActive'])->name('admin.academic-years.set-active');
+    Route::delete('/academic-years/{academic_year}', [AcademicYearController::class, 'destroy'])->name('admin.academic-years.destroy');
 });
 
-require __DIR__.'/auth.php';
+// MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
+// require __DIR__.'/auth.php';
+
