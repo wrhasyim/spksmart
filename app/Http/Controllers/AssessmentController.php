@@ -36,7 +36,7 @@ class AssessmentController extends Controller
         $activeYear = AcademicYear::where('is_active', true)->first();
 
         // Menggunakan updateOrCreate untuk mencegah error duplikasi data saat mengubah nilai lama
-        Assesment::updateOrCreate(
+        Assessment::updateOrCreate(
             ['student_id' => $student->id], // Cari berdasarkan student_id
             [
                 'absensi' => $validated['absensi'],
