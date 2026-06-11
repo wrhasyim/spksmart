@@ -32,7 +32,7 @@
         </div>
     </form>
 
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Rekomendasi Penempatan Prakerin</h1>
             <p class="text-sm text-gray-600">Tahun Ajaran Aktif: 
@@ -40,18 +40,24 @@
             </p>
         </div>
         
-        <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Menjalankan kalkulasi akan mereset data penempatan sebelumnya. Lanjutkan?')">
-            @csrf
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow font-bold transition">
-                🔄 Proses Rekomendasi SMART
-            </button>
-        </form>
+        <div class="flex gap-2">
+            <a href="{{ route('admin.spk.print', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg shadow font-bold transition flex items-center text-sm">
+                📄 Cetak PDF
+            </a>
+            
+            <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Menjalankan kalkulasi akan mereset data penempatan sebelumnya. Lanjutkan?')">
+                @csrf
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow font-bold transition flex items-center text-sm">
+                    🔄 Proses Rekomendasi SMART
+                </button>
+            </form>
+        </div>
     </div>
 
     @if(isset($chartData) && count($chartData) > 0)
         <div class="bg-white p-6 rounded-lg shadow mb-8 border border-gray-200">
             <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Statistik Penempatan Siswa per Perusahaan</h2>
-            <div class="w-full mx-auto" style="max-height: 350px;">
+            <div class="w-full mx-auto relative" style="height: 450px;">
                 <canvas id="companyBarChart"></canvas>
             </div>
         </div>
@@ -116,7 +122,10 @@
         document.addEventListener('DOMContentLoaded', function () {
             const chartData = @json($chartData);
             
-            const labels = chartData.map(item => item.company ? item.company.name : 'Tidak Diketahui');
+            const labels = chartData.map(item => {
+                let name = item.company ? item.company.name : 'Tidak Diketahui';
+                return name.length > 20 ? name.substring(0, 20) + '...' : name;
+            });
             const dataCounts = chartData.map(item => item.total);
 
             const ctx = document.getElementById('companyBarChart').getContext('2d');
@@ -130,12 +139,18 @@
                         backgroundColor: 'rgba(79, 70, 229, 0.7)',
                         borderColor: 'rgba(79, 70, 229, 1)',
                         borderWidth: 1,
-                        borderRadius: 6
+                        borderRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    // UBAH DI SINI: Menambahkan padding ekstra di bawah agar teks muat
+                    layout: {
+                        padding: {
+                            bottom: 40 
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -146,12 +161,23 @@
                             grid: { color: 'rgba(0, 0, 0, 0.05)' }
                         },
                         x: {
-                            ticks: { font: { family: 'sans-serif' } },
+                            ticks: { 
+                                font: { family: 'sans-serif', size: 11 },
+                                maxRotation: 45, 
+                                minRotation: 45
+                            },
                             grid: { display: false }
                         }
                     },
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return chartData[context[0].dataIndex].company.name;
+                                }
+                            }
+                        }
                     }
                 }
             });

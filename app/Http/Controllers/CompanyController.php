@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class CompanyController extends Controller
 {
     /**
-     * Tampilkan daftar perusahaan beserta perhitungan sisa kuota (terikat tahun ajaran)
+     * Tampilkan daftar perusahaan dengan pagination 10 data per halaman (terikat tahun ajaran)
      */
     public function index(Request $request)
     {
@@ -19,14 +19,15 @@ class CompanyController extends Controller
         
         $allYears = AcademicYear::all();
 
-        // Mengambil data perusahaan beserta jumlah siswa yang sudah ditempatkan (terisi)
+        // Mengambil data perusahaan menggunakan paginate(10) dan mempertahankan query string filter
         $companies = Company::with(['major', 'academicYear'])
             ->withCount(['placements' => function($query) use ($selectedYearId) {
                 $query->where('academic_year_id', $selectedYearId)
                       ->whereNotNull('company_id');
             }])
             ->where('academic_year_id', $selectedYearId)
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('admin.companies.index', compact('companies', 'allYears', 'selectedYearId'));
     }

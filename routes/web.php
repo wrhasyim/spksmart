@@ -26,6 +26,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
     Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
     
+    // 👇 TAMBAHKAN BARIS INI UNTUK CETAK PDF 👇
+    Route::get('/spk/print-pdf', [SpkController::class, 'printPdf'])->name('admin.spk.print');
+    
     // Manajemen Profil (Opsional, jika masih digunakan)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

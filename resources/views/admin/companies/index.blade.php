@@ -84,6 +84,12 @@
                 @endforelse
             </tbody>
         </table>
+
+        @if($companies instanceof \Illuminate\Pagination\LengthAwarePaginator && $companies->hasPages())
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                {{ $companies->links() }}
+            </div>
+        @endif
     </div>
 
 @endsection
