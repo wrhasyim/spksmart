@@ -39,7 +39,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('admin.academic-years.store');
     Route::post('/academic-years/{academic_year}/set-active', [AcademicYearController::class, 'setActive'])->name('admin.academic-years.set-active');
     Route::delete('/academic-years/{academic_year}', [AcademicYearController::class, 'destroy'])->name('admin.academic-years.destroy');
-});
+
+    // Manajemen Siswa
+    Route::get('/students', [StudentController::class, 'index'])->name('admin.students.index');
+    Route::get('/students/create', [StudentController::class, 'create'])->name('admin.students.create');
+    Route::post('/students', [StudentController::class, 'store'])->name('admin.students.store');
+    Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
+
+    // Input Nilai / Assessment Kriteria SMART
+    Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
+    Route::put('/students/{student}/assessment', [AssessmentController::class, 'update'])->name('admin.students.assessment.update');
+
+    });
 
 // MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
 // require __DIR__.'/auth.php';

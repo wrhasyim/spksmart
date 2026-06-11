@@ -4,27 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\Assessment;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
 class AssessmentController extends Controller
 {
     /**
-     * Tampilkan form input nilai untuk satu siswa spesifik
+     * Form input nilai kriteria SMART untuk siswa tertentu
      */
     public function edit(Student $student)
     {
-        // Ambil data nilai jika sudah ada, atau buat instance kosong
-        $assessment = $student->assessment ?? new Assessment();
-        
-        return view('admin.assessments.edit', compact('student', 'assessment'));
+        $student->load('assessment');
+        return view('admin.students.assessment', compact('student'));
     }
 
     /**
-     * Simpan atau Update nilai dari Hubin
+     * Simpan / Perbarui nilai kriteria SMART siswa
      */
     public function update(Request $request, Student $student)
     {
-        // Validasi agar Hubin tidak salah ketik (harus angka 0-100)
         $validated = $request->validate([
             'absensi' => 'required|numeric|min:0|max:100',
             'fisik_mental' => 'required|numeric|min:0|max:100',
@@ -33,16 +31,15 @@ class AssessmentController extends Controller
             'administrasi' => 'required|numeric|min:0|max:100',
         ]);
 
-        // Gunakan updateOrCreate agar kode lebih pendek & rapi
+        $activeYear = AcademicYear::where('is_active', true)->first();
+
         Assessment::updateOrCreate(
-            [
-                'student_id' => $student->id,
-                'academic_year_id' => $student->academic_year_id,
-            ],
-            $validated
+            ['student_id' => $student->id],
+            array_merge($validated, [
+                'academic_year_id' => $activeYear ? $activeYear->id : null
+            ])
         );
 
-        return redirect()->route('admin.students.index')
-                         ->with('success', 'Data penilaian siswa ' . $student->name . ' berhasil disimpan!');
+        return redirect()->route('admin.students.index')->with('success', 'Nilai kriteria SMART berhasil disimpan untuk siswa ' . $student->name);
     }
 }

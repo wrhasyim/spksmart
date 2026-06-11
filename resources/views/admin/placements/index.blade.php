@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Hubin - SPK Prakerin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 font-sans antialiased">
 
@@ -50,6 +51,13 @@
                     🔄 Proses Rekomendasi SMART
                 </button>
             </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow mb-8 border border-gray-200">
+            <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Statistik Penempatan Siswa per Perusahaan</h2>
+            <div class="w-full mx-auto" style="max-height: 350px;">
+                <canvas id="companyBarChart"></canvas>
+            </div>
         </div>
 
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -100,5 +108,51 @@
 
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mengambil data dari controller yang di-pass melalui blade JSON encode
+            const chartData = @json($chartData);
+            
+            const labels = chartData.map(item => item.company ? item.company.name : 'Tidak Diketahui');
+            const dataCounts = chartData.map(item => item.total);
+
+            const ctx = document.getElementById('companyBarChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Siswa Diterpatkan',
+                        data: dataCounts,
+                        backgroundColor: 'rgba(79, 70, 229, 0.7)', // Indigo Tailwind
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1, // Kenaikan angka 1 per 1 (karena jumlah siswa satuan)
+                                font: { family: 'sans-serif' }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            ticks: { font: { family: 'sans-serif' } },
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

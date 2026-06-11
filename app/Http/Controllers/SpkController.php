@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\SmartEngineService;
 use App\Models\AcademicYear;
 use App\Models\Placement;
+use Illuminate\Support\Facades\DB;
 
 class SpkController extends Controller
 {
@@ -16,27 +17,30 @@ class SpkController extends Controller
         $this->smartEngine = $smartEngine;
     }
 
-    /**
-     * Halaman Dashboard Hasil Penempatan (Bisa diakses oleh Hubin)
-     */
     public function index()
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
         
-        // Ambil data penempatan yang sudah diproses beserta relasi student & company
         $placements = [];
+        $chartData = [];
+
         if ($activeYear) {
             $placements = Placement::where('academic_year_id', $activeYear->id)
                 ->with(['student.major', 'company'])
                 ->get();
+
+            // Query untuk mengambil data grafik: jumlah siswa per perusahaan
+            $chartData = Placement::select('company_id', DB::raw('count(*) as total'))
+                ->whereNotNull('company_id')
+                ->where('academic_year_id', $activeYear->id)
+                ->with('company')
+                ->groupBy('company_id')
+                ->get();
         }
 
-        return view('admin.placements.index', compact('placements', 'activeYear'));
+        return view('admin.placements.index', compact('placements', 'activeYear', 'chartData'));
     }
 
-    /**
-     * Tombol Eksekusi Mesin SMART
-     */
     public function generate(Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
@@ -46,7 +50,6 @@ class SpkController extends Controller
         }
 
         try {
-            // Panggil Service Engine
             $this->smartEngine->runMatchmaking($activeYear->id);
 
             return redirect()->route('admin.placements.index')
