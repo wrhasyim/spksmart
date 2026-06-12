@@ -18,6 +18,14 @@ return new class extends Migration
             
             $table->string('batch_name'); 
             $table->integer('quota');
+            
+            // --- INI ADALAH KOLOM BARU YANG KITA TAMBAHKAN ---
+            // 'Semua' = Tidak ada syarat khusus jenis kelamin
+            // 'L' = Khusus Laki-laki
+            // 'P' = Khusus Perempuan
+            $table->enum('gender_requirement', ['L', 'P', 'Semua'])->default('Semua'); 
+            // -------------------------------------------------
+
             $table->decimal('min_total_score', 5, 2)->default(0.00); 
             $table->integer('min_absensi_score')->default(0); 
             

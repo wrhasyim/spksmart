@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             // Kolom kuota, nilai, dan relasi jurusan DIHAPUS dari sini
             $table->timestamps();
+            
         });
     }
 

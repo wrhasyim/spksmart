@@ -33,15 +33,16 @@ class CompanySlotController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'company_id'        => 'required|exists:companies,id',
-            'academic_year_id'  => 'required|exists:academic_years,id',
-            'major_id'          => 'required|exists:majors,id',
-            'batch_name'        => 'required|string|max:255',
-            'quota'             => 'required|integer|min:1',
-            'min_total_score'   => 'required|numeric|min:0|max:100',
-            'min_absensi_score' => 'required|numeric|min:0|max:100',
-            'start_date'        => 'required|date',
-            'end_date'          => 'required|date|after_or_equal:start_date',
+            'company_id'         => 'required|exists:companies,id', // Hanya di fungsi store
+            'academic_year_id'   => 'required|exists:academic_years,id',
+            'major_id'           => 'required|exists:majors,id',
+            'batch_name'         => 'required|string|max:255',
+            'gender_requirement' => 'required|in:L,P,Semua', // <--- Tambahkan baris ini
+            'quota'              => 'required|integer|min:1',
+            'min_total_score'    => 'required|numeric|min:0|max:100',
+            'min_absensi_score'  => 'required|numeric|min:0|max:100',
+            'start_date'         => 'required|date',
+            'end_date'           => 'required|date|after_or_equal:start_date',
         ]);
 
         CompanySlot::create($validated);
@@ -68,14 +69,16 @@ class CompanySlotController extends Controller
     public function update(Request $request, CompanySlot $companySlot)
     {
         $validated = $request->validate([
-            'academic_year_id'  => 'required|exists:academic_years,id',
-            'major_id'          => 'required|exists:majors,id',
-            'batch_name'        => 'required|string|max:255',
-            'quota'             => 'required|integer|min:1',
-            'min_total_score'   => 'required|numeric|min:0|max:100',
-            'min_absensi_score' => 'required|numeric|min:0|max:100',
-            'start_date'        => 'required|date',
-            'end_date'          => 'required|date|after_or_equal:start_date',
+            'company_id'         => 'required|exists:companies,id', // Hanya di fungsi store
+            'academic_year_id'   => 'required|exists:academic_years,id',
+            'major_id'           => 'required|exists:majors,id',
+            'batch_name'         => 'required|string|max:255',
+            'gender_requirement' => 'required|in:L,P,Semua', // <--- Tambahkan baris ini
+            'quota'              => 'required|integer|min:1',
+            'min_total_score'    => 'required|numeric|min:0|max:100',
+            'min_absensi_score'  => 'required|numeric|min:0|max:100',
+            'start_date'         => 'required|date',
+            'end_date'           => 'required|date|after_or_equal:start_date',
         ]);
 
         $companySlot->update($validated);

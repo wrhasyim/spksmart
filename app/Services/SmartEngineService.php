@@ -38,9 +38,6 @@ class SmartEngineService
     }
 
     /**
-     * Menghitung Skor Akhir SMART dari satu Assessment.
-     */
-    /**
      * Menghitung Skor Akhir SMART dari satu Assessment secara dinamis.
      */
     public function calculateScore($assessment): float
@@ -99,7 +96,14 @@ class SmartEngineService
             foreach ($students as $student) {
                 if (!$student->assessment) continue; // Skip jika belum dinilai
                 
-                $student->final_score = $this->calculateScore($student->assessment);
+                // Hitung skor dari mesin
+                $score = $this->calculateScore($student->assessment);
+                $student->final_score = $score;
+                
+                // --- PERBAIKAN: Simpan skor ke database (tabel students) ---
+                $student->update(['final_score' => $score]); 
+                // -----------------------------------------------------------
+
                 $studentScores[] = $student;
             }
 
@@ -153,10 +157,19 @@ class SmartEngineService
         // 2. Apakah Jurusannya Sesuai?
         if ($student->major_id !== $companySlot->major_id) return false;
 
-        // 3. Apakah Lulus Passing Grade Total SMART?
+        // --- INI BAGIAN LOGIKA BARU UNTUK SYARAT JENIS KELAMIN ---
+        // 3. Apakah Jenis Kelamin Sesuai Syarat Perusahaan?
+        if ($companySlot->gender_requirement !== 'Semua') {
+            if ($student->gender !== $companySlot->gender_requirement) {
+                return false; // Gagal, karena jenis kelamin tidak cocok
+            }
+        }
+        // ---------------------------------------------------------
+
+        // 4. Apakah Lulus Passing Grade Total SMART?
         if ($student->final_score < $companySlot->min_total_score) return false;
 
-        // 4. Apakah Lulus Syarat Mutlak Absensi?
+        // 5. Apakah Lulus Syarat Mutlak Absensi?
         if ($student->assessment->absensi < $companySlot->min_absensi_score) return false;
 
         // JIKA SEMUA SYARAT TERPENUHI -> Lakukan Penempatan ke tabel Placements

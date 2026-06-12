@@ -16,6 +16,7 @@ class CompanySlot extends Model
         'academic_year_id', 
         'major_id', 
         'batch_name', 
+        'gender_requirement', // <--- Tambahkan ini
         'quota', 
         'min_total_score', 
         'min_absensi_score',

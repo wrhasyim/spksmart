@@ -51,6 +51,14 @@
             </div>
 
             <div>
+                <label class="block text-sm font-bold text-gray-700">Syarat Jenis Kelamin <span class="text-red-500">*</span></label>
+                <select name="gender_requirement" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    <option value="Semua" {{ old('gender_requirement') == 'Semua' ? 'selected' : '' }}>Semua Jenis Kelamin</option>
+                    <option value="L" {{ old('gender_requirement') == 'L' ? 'selected' : '' }}>Khusus Laki-laki (L)</option>
+                    <option value="P" {{ old('gender_requirement') == 'P' ? 'selected' : '' }}>Khusus Perempuan (P)</option>
+                </select>
+            </div>
+            <div>
                 <label class="block text-sm font-bold text-gray-700">Mulai Pendaftaran <span class="text-red-500">*</span></label>
                 <input type="date" name="start_date" value="{{ old('start_date') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
             </div>
