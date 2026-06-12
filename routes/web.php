@@ -64,6 +64,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
     Route::put('/students/{student}/assessment', [AssessmentController::class, 'update'])->name('admin.students.assessment.update');
 
+   // Rute untuk download template sample excel siswa
+Route::get('/students/sample-excel', [App\Http\Controllers\StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
+
+// Rute untuk memproses file excel yang di-upload
+Route::post('/students/import', [App\Http\Controllers\StudentController::class, 'import'])->name('admin.students.import');
 });
 
 // MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
