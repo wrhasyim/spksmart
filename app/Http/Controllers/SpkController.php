@@ -118,6 +118,7 @@ class SpkController extends Controller
         // Alirkan stream PDF langsung ke browser peninjau
         return $pdf->stream('Laporan_Penempatan_Prakerin_' . $safeYearName . '.pdf');
     }
+    
     public function printLetter(Placement $placement)
     {
         // Pastikan siswa ini memang diterima di sebuah perusahaan
