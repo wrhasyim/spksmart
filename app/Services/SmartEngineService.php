@@ -6,35 +6,34 @@ use App\Models\Assessment;
 use App\Models\CompanySlot;
 use App\Models\Placement;
 use App\Models\Student;
+use App\Models\Criterion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class SmartEngineService
 {
-    // Konfigurasi Bobot Dasar SMART (Total = 100)
-    private $rawWeights = [
-        'absensi'       => 30, // Benefit
-        'fisik_mental'  => 15, // Benefit
-        'keaktifan'     => 15, // Benefit
-        'catatan_kasus' => 25, // Cost
-        'administrasi'  => 15, // Benefit
-    ];
-
     private $bounds = [
         'min' => 0,
         'max' => 100
     ];
 
     /**
-     * Menghitung nilai bobot yang sudah dinormalisasi menjadi pecahan desimal.
+     * Menghitung nilai bobot yang sudah dinormalisasi menjadi pecahan desimal
+     * secara dinamis dari tabel criterias.
      */
     private function getNormalizedWeights(): array
     {
-        $totalWeight = array_sum($this->rawWeights);
+        $criterias = Criterion::all();
+        $totalWeight = $criterias->sum('weight');
+        
+        // Pencegahan pembagian dengan nol apabila data belum diatur
+        $totalWeight = $totalWeight > 0 ? $totalWeight : 1.0;
+
         $normalized = [];
-        foreach ($this->rawWeights as $key => $weight) {
-            $normalized[$key] = $weight / $totalWeight;
+        foreach ($criterias as $criterion) {
+            $normalized[$criterion->code] = $criterion->weight / $totalWeight;
         }
+        
         return $normalized;
     }
 
@@ -46,18 +45,27 @@ class SmartEngineService
         $weights = $this->getNormalizedWeights();
         $score = 0;
 
-        // 1. Benefit Criteria (Semakin besar semakin baik)
-        $benefitCriteria = ['absensi', 'fisik_mental', 'keaktifan', 'administrasi'];
-        foreach ($benefitCriteria as $criteria) {
-            // Rumus Benefit: (C_out - C_min) / (C_max - C_min)
-            $utility = ($assessment->$criteria - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
-            $score += $utility * $weights[$criteria];
-        }
+        // 1. Kriteria Benefit (Menggunakan bobot dinamis dari tabel criterias)
+        // Absensi
+        $utilityAbsensi = ($assessment->absensi - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
+        $score += $utilityAbsensi * ($weights['absensi'] ?? 0);
 
-        // 2. Cost Criteria (Catatan Kasus - Semakin KECIL semakin BAIK)
+        // Fisik & Mental
+        $utilityFisik = ($assessment->fisik_mental - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
+        $score += $utilityFisik * ($weights['fisik'] ?? 0);
+
+        // Keaktifan
+        $utilityAktif = ($assessment->keaktifan - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
+        $score += $utilityAktif * ($weights['aktif'] ?? 0);
+
+        // Administrasi
+        $utilityAdmin = ($assessment->administrasi - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
+        $score += $utilityAdmin * ($weights['admin'] ?? 0);
+
+        // 2. Kriteria Cost (Catatan Kasus)
         // Rumus Cost: (C_max - C_out) / (C_max - C_min)
         $utilityCost = ($this->bounds['max'] - $assessment->catatan_kasus) / ($this->bounds['max'] - $this->bounds['min']);
-        $score += $utilityCost * $weights['catatan_kasus'];
+        $score += $utilityCost * ($weights['kasus'] ?? 0);
 
         // Kembalikan nilai dalam bentuk puluhan (0-100)
         return round($score * 100, 2);
@@ -81,7 +89,6 @@ class SmartEngineService
                 ->with(['assessment', 'major'])
                 ->get();
 
-            // KITA MENGGUNAKAN COMPANY SLOT SEBAGAI SYARAT FILTERING
             $companySlots = CompanySlot::where('academic_year_id', $academicYearId)->get();
 
             $studentScores = [];

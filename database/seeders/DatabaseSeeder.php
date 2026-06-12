@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         // Memanggil SpkInitialSeeder yang sudah kita buat sebelumnya
         $this->call([
             SpkInitialSeeder::class,
+            CriteriaSeeder::class,
         ]);
     }
 }

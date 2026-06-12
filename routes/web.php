@@ -77,6 +77,8 @@ Route::get('/placements/{placement}/edit', [App\Http\Controllers\SpkController::
 Route::put('/placements/{placement}', [App\Http\Controllers\SpkController::class, 'update'])->name('admin.placements.update');
 
 Route::get('spk/export-excel', [App\Http\Controllers\SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
+Route::get('/criterias', [App\Http\Controllers\CriterionController::class, 'index'])->name('admin.criterias.index');
+Route::put('/criterias/update', [App\Http\Controllers\CriterionController::class, 'update'])->name('admin.criterias.update');
 });
 
 // MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
