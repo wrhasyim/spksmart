@@ -2,140 +2,103 @@
 
 namespace App\Services;
 
-use App\Models\Assessment;
-use App\Models\CompanySlot;
 use App\Models\Placement;
 use App\Models\Student;
 use App\Models\Criterion;
+use App\Models\CompanySlot;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Collection;
 
 class SmartEngineService
 {
-    private $bounds = [
-        'min' => 0,
-        'max' => 100
-    ];
+    private $bounds = ['min' => 0, 'max' => 100];
 
-    /**
-     * Menghitung nilai bobot yang sudah dinormalisasi menjadi pecahan desimal
-     * secara dinamis dari tabel criterias.
-     */
     private function getNormalizedWeights(): array
     {
         $criterias = Criterion::all();
         $totalWeight = $criterias->sum('weight');
-        
-        // Pencegahan pembagian dengan nol apabila data belum diatur
         $totalWeight = $totalWeight > 0 ? $totalWeight : 1.0;
 
         $normalized = [];
         foreach ($criterias as $criterion) {
             $normalized[$criterion->code] = $criterion->weight / $totalWeight;
         }
-        
         return $normalized;
     }
 
-    /**
-     * Menghitung Skor Akhir SMART dari satu Assessment secara dinamis.
-     */
     public function calculateScore($assessment): float
     {
         $weights = $this->getNormalizedWeights();
-        $criterias = Criterion::all(); // Membaca semua kriteria yang ada di database
+        $criterias = Criterion::all(); 
         $score = 0;
 
         foreach ($criterias as $crit) {
             $code = $crit->code;
             $type = strtolower($crit->type);
             $weight = $weights[$code] ?? 0;
-
-            // Ambil nilai asli dari tabel assessments berdasarkan 'code' kriteria
-            // (Pastikan nama kolom di tabel assessments sama dengan 'code' kriteria)
             $val = $assessment->$code ?? 0;
 
             if ($type === 'benefit') {
-                // Rumus Benefit: (C_out - C_min) / (C_max - C_min)
                 $utility = ($val - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
                 $score += $utility * $weight;
             } elseif ($type === 'cost') {
-                // Rumus Cost: (C_max - C_out) / (C_max - C_min)
                 $utility = ($this->bounds['max'] - $val) / ($this->bounds['max'] - $this->bounds['min']);
                 $score += $utility * $weight;
             }
         }
-
-        // Kembalikan nilai dalam bentuk puluhan (0-100)
         return round($score * 100, 2);
     }
 
-    /**
-     * Fungsi Inti Skripsi: Mencocokkan Siswa dengan Gelombang Perusahaan (Company Slot).
-     */
     public function runMatchmaking($academicYearId)
     {
         DB::beginTransaction();
         try {
-            // 1. Bersihkan riwayat penempatan (Placement) di tahun ajaran aktif ini
-            Placement::where('academic_year_id', $academicYearId)->delete();
+            // --- 1. LOCKING LOGIC & CLEANUP ---
+            // Hanya hapus hasil penempatan yang gagal/pembinaan agar riwayat berhasil tetap tersimpan
+            Placement::where('academic_year_id', $academicYearId)
+                     ->whereNull('company_id') 
+                     ->delete();
 
-            // 2. Reset Status Semua Siswa
-            Student::where('academic_year_id', $academicYearId)->update(['status' => 'belum_prakerin']);
-
-            // 3. Ambil data Siswa (yang sudah ada nilainya) & Data Gelombang Lowongan
+            // Ambil siswa yang BELUM Lolos Prakerin (Locking: yang sudah lolos diabaikan)
             $students = Student::where('academic_year_id', $academicYearId)
+                ->where('status', '!=', 'lolos_prakerin')
                 ->with(['assessment', 'major'])
                 ->get();
 
+            // Ambil semua slot dan hitung sisa kuota sebenarnya
             $companySlots = CompanySlot::where('academic_year_id', $academicYearId)->get();
-
-            $studentScores = [];
-            
-            // 4. Hitung Skor SMART Setiap Siswa
-            foreach ($students as $student) {
-                if (!$student->assessment) continue; // Skip jika belum dinilai
-                
-                // Hitung skor dari mesin
-                $score = $this->calculateScore($student->assessment);
-                $student->final_score = $score;
-                
-                // --- PERBAIKAN: Simpan skor ke database (tabel students) ---
-                $student->update(['final_score' => $score]); 
-                // -----------------------------------------------------------
-
-                $studentScores[] = $student;
+            foreach ($companySlots as $slot) {
+                // Hitung kuota yang sudah terpakai oleh siswa yang sudah 'lolos_prakerin'
+                $used = Placement::where('company_slot_id', $slot->id)->count();
+                $slot->available_quota = max(0, $slot->quota - $used);
             }
 
-            // 5. Urutkan Siswa Berdasarkan Skor Tertinggi (Ranking 1 ke bawah)
-            usort($studentScores, fn($a, $b) => $b->final_score <=> $a->final_score);
+            // Hitung Skor
+            foreach ($students as $student) {
+                if (!$student->assessment) continue; 
+                $student->final_score = $this->calculateScore($student->assessment);
+            }
 
-            // 6. Proses Penempatan (Matchmaking)
-            foreach ($studentScores as $student) {
-                $placed = false;
+            // Urutkan: Skor Tertinggi -> Absensi Tertinggi
+            $students = $students->sortByDesc(function($student) {
+                return [$student->final_score, $student->assessment->absensi ?? 0];
+            });
 
-                // Cari slot perusahaan yang cocok untuk siswa ini
+            // --- 2. PROSES PENEMPATAN ---
+            foreach ($students as $student) {
                 foreach ($companySlots as $slot) {
                     if ($this->tryPlaceStudent($student, $slot, $academicYearId)) {
-                        $placed = true;
-                        break; // Stop mencari perusahaan lain jika sudah dapat tempat
+                        break; 
                     }
                 }
-
-                // Jika siswa tidak diterima di perusahaan manapun (Karena nilai kurang atau kuota habis)
-                if (!$placed) {
-                    Placement::create([
-                        'student_id'        => $student->id,
-                        'company_id'        => null, // Null berarti tidak dapat perusahaan
-                        'final_smart_score' => $student->final_score,
-                        'placement_method'  => 'SYSTEM',
-                        'notes'             => 'Tidak memenuhi passing grade industri atau kuota penuh. Masuk antrean/pembinaan.',
-                        'academic_year_id'  => $academicYearId
-                    ]);
-                    
-                    $student->update(['status' => 'pembinaan']);
-                }
             }
+
+            // Siswa sisa yang tidak masuk slot mana pun, tandai pembinaan
+            Student::where('academic_year_id', $academicYearId)
+                ->where('status', '!=', 'lolos_prakerin')
+                ->whereDoesntHave('placement', function($q) {
+                    $q->whereNotNull('company_id');
+                })
+                ->update(['status' => 'pembinaan']);
 
             DB::commit();
             return true;
@@ -146,43 +109,41 @@ class SmartEngineService
         }
     }
 
-    /**
-     * Mengecek dan menempatkan siswa jika memenuhi syarat Gelombang Lowongan.
-     */
     private function tryPlaceStudent($student, $companySlot, $academicYearId): bool
     {
-        // 1. Apakah Kuota Masih Ada?
-        if ($companySlot->quota <= 0) return false;
+        // Gunakan available_quota yang sudah dihitung di runMatchmaking
+        if ($companySlot->available_quota <= 0) return false;
 
-        // 2. Apakah Jurusannya Sesuai?
+        // Cek Jurusan
         if ($student->major_id !== $companySlot->major_id) return false;
 
-        // --- INI BAGIAN LOGIKA BARU UNTUK SYARAT JENIS KELAMIN ---
-        // 3. Apakah Jenis Kelamin Sesuai Syarat Perusahaan?
-        if ($companySlot->gender_requirement !== 'Semua') {
-            if ($student->gender !== $companySlot->gender_requirement) {
-                return false; // Gagal, karena jenis kelamin tidak cocok
-            }
+        // --- 3. FILTER GENDER KETAT ---
+        if (in_array($companySlot->gender_requirement, ['L', 'P'])) {
+            $sGender = strtoupper(trim($student->gender ?? ''));
+            $req = strtoupper(trim($companySlot->gender_requirement));
+
+            // Normalisasi
+            if (in_array($sGender, ['LAKI-LAKI', 'L', 'COWO'])) $sGender = 'L';
+            if (in_array($sGender, ['PEREMPUAN', 'P', 'CEWE'])) $sGender = 'P';
+
+            if ($sGender !== $req) return false; 
         }
-        // ---------------------------------------------------------
 
-        // 4. Apakah Lulus Passing Grade Total SMART?
+        // Cek Passing Grade
         if ($student->final_score < $companySlot->min_total_score) return false;
-
-        // 5. Apakah Lulus Syarat Mutlak Absensi?
         if ($student->assessment->absensi < $companySlot->min_absensi_score) return false;
 
-        // JIKA SEMUA SYARAT TERPENUHI -> Lakukan Penempatan ke tabel Placements
+        // --- 4. EKSEKUSI ---
         Placement::create([
             'student_id'        => $student->id,
-            'company_id'        => $companySlot->company_id, // KITA MENGAMBIL ID PERUSAHAAN DARI SLOT
+            'company_id'        => $companySlot->company_id, 
+            'company_slot_id'   => $companySlot->id,
             'final_smart_score' => $student->final_score,
             'placement_method'  => 'SYSTEM',
             'academic_year_id'  => $academicYearId
         ]);
 
-        // Kurangi Kuota Perusahaan & Update Status Siswa
-        $companySlot->quota -= 1;
+        $companySlot->available_quota--; // Kurangi kuota sementara di memori
         $student->update(['status' => 'lolos_prakerin']);
 
         return true;

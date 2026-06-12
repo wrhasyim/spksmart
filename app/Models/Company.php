@@ -12,7 +12,10 @@ class Company extends Model
         'min_total_score', 'min_absensi_score', 'min_fisik_score', 
         'min_keaktifan_score', 'min_administrasi_score', 'academic_year_id'
     ];
-
+public function slots()
+{
+    return $this->hasMany(CompanySlot::class);
+}
     public function major(): BelongsTo
     {
         return $this->belongsTo(Major::class);

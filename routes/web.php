@@ -85,6 +85,8 @@ Route::resource('criterias', App\Http\Controllers\CriterionController::class)->n
     'update'  => 'admin.criterias.update',
     'destroy' => 'admin.criterias.destroy',
 ]);
+// Pastikan diarahkan ke PlacementController
+Route::get('/admin/spk/history', [App\Http\Controllers\SpkController::class, 'history'])->name('admin.spk.history');
 
 });
 

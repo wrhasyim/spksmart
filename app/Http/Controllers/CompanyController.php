@@ -23,26 +23,20 @@ class CompanyController extends Controller
     /**
      * Tampilkan Detail Perusahaan + Manajemen Gelombang Lowongan (Master-Detail)
      */
-    public function show(Company $company, Request $request)
+   public function show(Company $company, Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
         $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
         $allYears = AcademicYear::all();
-        $majors = Major::all(); // Untuk kebutuhan form tambah slot cepat
+        $majors = Major::all();
 
-        // Ambil data Gelombang Lowongan khusus milik perusahaan ini pada periode tahun ajaran terpilih
         $slots = CompanySlot::where('company_id', $company->id)
             ->where('academic_year_id', $selectedYearId)
             ->with('major')
             ->get()
-            ->map(function ($slot) use ($selectedYearId) {
-                // HITUNG LIVE SISA KUOTA: Hitung jumlah siswa dari jurusan ini yang ditempatkan di perusahaan ini
-                $kuotaTerisi = Placement::where('company_id', $slot->company_id)
-                    ->where('academic_year_id', $selectedYearId)
-                    ->whereHas('student', function ($query) use ($slot) {
-                        $query->where('major_id', $slot->major_id);
-                    })
-                    ->count();
+            ->map(function ($slot) {
+                // LOGIKA BARU: Hitung siswa HANYA berdasarkan company_slot_id ini
+                $kuotaTerisi = Placement::where('company_slot_id', $slot->id)->count();
 
                 $slot->kuota_terisi = $kuotaTerisi;
                 $slot->sisa_kuota = max(0, $slot->quota - $kuotaTerisi);

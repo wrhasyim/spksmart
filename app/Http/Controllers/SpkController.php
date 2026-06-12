@@ -167,4 +167,14 @@ class SpkController extends Controller
     
     return Excel::download(new PlacementsExport($academicYearId), $filename);
 }
+public function history()
+    {
+        // Mengambil data penempatan
+        $history = Placement::with(['student', 'company', 'academicYear'])
+                    ->latest()
+                    ->paginate(20);
+                    
+        // Mengarahkan ke file view yang disimpan di folder placements
+        return view('admin.placements.history', compact('history'));
+    }
 }

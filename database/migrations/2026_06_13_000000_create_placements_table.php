@@ -10,16 +10,16 @@ return new class extends Migration
     {
         Schema::create('placements', function (Blueprint $table) {
             $table->id();
-            // Relasi mengarah ke tabel students
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
-            
-            // Jika NULL, berarti siswa gagal lolos syarat manapun -> Masuk Program Pembinaan
             $table->foreignId('company_id')->nullable()->constrained('companies')->onDelete('set null'); 
             
-            $table->float('final_smart_score'); // Skor akhir persentase 0-100
-            $table->enum('placement_method', ['SYSTEM', 'MANUAL_OVERRIDE'])->default('SYSTEM');
-            $table->text('notes')->nullable(); // Catatan pembinaan atau veto manual
+            // --- INI KOLOM BARU AGAR SISTEM INGAT SLOT MANA YANG DIAMBIL ---
+            $table->foreignId('company_slot_id')->nullable()->constrained('company_slots')->onDelete('set null');
+            // ---------------------------------------------------------------
             
+            $table->float('final_smart_score'); 
+            $table->enum('placement_method', ['SYSTEM', 'MANUAL_OVERRIDE'])->default('SYSTEM');
+            $table->text('notes')->nullable(); 
             $table->foreignId('academic_year_id')->constrained('academic_years')->onDelete('cascade');
             $table->timestamps();
         });

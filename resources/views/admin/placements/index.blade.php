@@ -96,7 +96,15 @@
                             <td class="px-6 py-4 text-sm max-w-[200px]">
                                 @if($placement->company)
                                     <div class="font-bold text-green-700 truncate">{{ $placement->company->name }}</div>
-                                @else
+                                    
+                                    @if($placement->company_slot_id && $placement->companySlot)
+                                        <div class="mt-1">
+                                            <span class="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded border border-gray-200">
+                                                Gelombang: {{ $placement->companySlot->batch_name }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                    @else
                                     <span class="text-red-500 font-medium">- Program Pembinaan -</span>
                                 @endif
 
