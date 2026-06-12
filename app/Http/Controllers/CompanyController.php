@@ -3,19 +3,53 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\AcademicYear;
+use App\Models\CompanySlot;
+use App\Models\Placement;
+use App\Models\Major;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
     /**
-     * Tampilkan daftar perusahaan (Master Data murni, tanpa filter tahun ajaran)
+     * Tampilkan daftar perusahaan (Master Data)
      */
     public function index(Request $request)
     {
-        // Mengambil data perusahaan master dengan pagination
         $companies = Company::orderBy('name', 'asc')->paginate(10);
-
         return view('admin.companies.index', compact('companies'));
+    }
+
+    /**
+     * Tampilkan Detail Perusahaan + Manajemen Gelombang Lowongan (Master-Detail)
+     */
+    public function show(Company $company, Request $request)
+    {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
+        $allYears = AcademicYear::all();
+        $majors = Major::all(); // Untuk kebutuhan form tambah slot cepat
+
+        // Ambil data Gelombang Lowongan khusus milik perusahaan ini pada periode tahun ajaran terpilih
+        $slots = CompanySlot::where('company_id', $company->id)
+            ->where('academic_year_id', $selectedYearId)
+            ->with('major')
+            ->get()
+            ->map(function ($slot) use ($selectedYearId) {
+                // HITUNG LIVE SISA KUOTA: Hitung jumlah siswa dari jurusan ini yang ditempatkan di perusahaan ini
+                $kuotaTerisi = Placement::where('company_id', $slot->company_id)
+                    ->where('academic_year_id', $selectedYearId)
+                    ->whereHas('student', function ($query) use ($slot) {
+                        $query->where('major_id', $slot->major_id);
+                    })
+                    ->count();
+
+                $slot->kuota_terisi = $kuotaTerisi;
+                $slot->sisa_kuota = max(0, $slot->quota - $kuotaTerisi);
+                return $slot;
+            });
+
+        return view('admin.companies.show', compact('company', 'slots', 'allYears', 'selectedYearId', 'activeYear', 'majors'));
     }
 
     /**
@@ -31,7 +65,6 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi HANYA UNTUK KOLOM YANG ADA DI TABEL companies
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
             'address' => 'nullable|string',
@@ -58,7 +91,6 @@ class CompanyController extends Controller
      */
     public function update(Request $request, Company $company)
     {
-        // Validasi HANYA UNTUK KOLOM YANG ADA DI TABEL companies
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
             'address' => 'nullable|string',
@@ -82,8 +114,7 @@ class CompanyController extends Controller
             return redirect()->route('admin.companies.index')
                              ->with('success', 'Data perusahaan berhasil dihapus.');
         } catch (\Exception $e) {
-            // Proteksi jika perusahaan tidak bisa dihapus karena sudah dipakai di tabel company_slots
-            return back()->with('error', 'Perusahaan tidak dapat dihapus karena masih terhubung dengan data Gelombang/Lowongan.');
+            return back()->with('error', 'Perusahaan tidak dapat dihapus karena masih memiliki riwayat gelombang lowongan.');
         }
     }
 }

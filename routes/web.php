@@ -66,6 +66,8 @@ Route::middleware(['auth'])->group(function () {
 
    // Rute untuk download template sample excel siswa
 Route::get('/students/sample-excel', [App\Http\Controllers\StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
+// Tambahkan baris rute detail ini jika belum tercover oleh Resource Controller
+Route::get('/companies/{company}', [App\Http\Controllers\CompanyController::class, 'show'])->name('admin.companies.show');
 
 // Rute untuk memproses file excel yang di-upload
 Route::post('/students/import', [App\Http\Controllers\StudentController::class, 'import'])->name('admin.students.import');

@@ -2,78 +2,101 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Company;
 use App\Models\CompanySlot;
-use App\Models\AcademicYear;
+use App\Models\Company;
 use App\Models\Major;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
-use Carbon\Carbon; // Library ajaib untuk hitung tanggal
 
 class CompanySlotController extends Controller
 {
-    public function index()
+    /**
+     * Tampilkan form untuk menambah gelombang baru
+     */
+    public function create(Request $request)
     {
-        // Mengambil semua data slot lowongan, diurutkan dari yang terbaru
-        // dan menyertakan relasi perusahaan dan jurusan agar tidak berat (Eager Loading)
-        $slots = CompanySlot::with(['company', 'major', 'academicYear'])->latest()->get();
-        
-        return view('admin.company_slots.index', compact('slots'));
-    }
-    // Menampilkan halaman form input lowongan baru
-    public function create()
-    {
-        $companies = Company::all();
+        $companyId = $request->get('company_id');
+        if (!$companyId) {
+            return redirect()->route('admin.companies.index')->with('error', 'Pilih perusahaan terlebih dahulu.');
+        }
+
+        $company = Company::findOrFail($companyId);
         $majors = Major::all();
-        // Ambil tahun ajaran yang sedang aktif saja
-        $activeYear = AcademicYear::where('is_active', true)->first(); 
+        $academicYears = AcademicYear::where('is_active', true)->get();
 
-        return view('admin.company_slots.create', compact('companies', 'majors', 'activeYear'));
+        return view('admin.company_slots.create', compact('company', 'majors', 'academicYears'));
     }
 
-    // Memproses data dari form dan menyimpan ke database
+    /**
+     * Simpan gelombang baru dan KEMBALI ke halaman Detail Perusahaan
+     */
     public function store(Request $request)
     {
-        // 1. Validasi input dari Hubin
-        $request->validate([
+        $validated = $request->validate([
             'company_id'        => 'required|exists:companies,id',
+            'academic_year_id'  => 'required|exists:academic_years,id',
             'major_id'          => 'required|exists:majors,id',
             'batch_name'        => 'required|string|max:255',
             'quota'             => 'required|integer|min:1',
             'min_total_score'   => 'required|numeric|min:0|max:100',
             'min_absensi_score' => 'required|numeric|min:0|max:100',
             'start_date'        => 'required|date',
-            'duration_months'   => 'required|integer|in:1,2,3,4,5,6', // Pilihan durasi bulan
+            'end_date'          => 'required|date|after_or_equal:start_date',
         ]);
 
-        // Pastikan ada tahun ajaran yang aktif
-        $activeYear = AcademicYear::where('is_active', true)->first();
-        if (!$activeYear) {
-            return back()->with('error', 'Tidak ada Tahun Ajaran yang aktif. Silakan atur terlebih dahulu.');
-        }
+        CompanySlot::create($validated);
 
-        // 2. LOGIKA INTI SKRIPSI: Hitung End Date otomatis dengan Carbon
-        $startDate = Carbon::parse($request->start_date);
-        $duration = (int) $request->duration_months;
+        return redirect()->route('admin.companies.show', $request->company_id)
+                         ->with('success', 'Gelombang lowongan baru berhasil dibuka!');
+    }
+
+    /**
+     * Tampilkan form Edit gelombang (Fungsi yang sebelumnya Error/Hilang)
+     */
+    public function edit(CompanySlot $companySlot)
+    {
+        $company = $companySlot->company;
+        $majors = Major::all();
+        $academicYears = AcademicYear::all(); // Tampilkan semua untuk opsi edit
+
+        return view('admin.company_slots.edit', compact('companySlot', 'company', 'majors', 'academicYears'));
+    }
+
+    /**
+     * Perbarui data gelombang dan KEMBALI ke halaman Detail Perusahaan
+     */
+    public function update(Request $request, CompanySlot $companySlot)
+    {
+        $validated = $request->validate([
+            'academic_year_id'  => 'required|exists:academic_years,id',
+            'major_id'          => 'required|exists:majors,id',
+            'batch_name'        => 'required|string|max:255',
+            'quota'             => 'required|integer|min:1',
+            'min_total_score'   => 'required|numeric|min:0|max:100',
+            'min_absensi_score' => 'required|numeric|min:0|max:100',
+            'start_date'        => 'required|date',
+            'end_date'          => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $companySlot->update($validated);
+
+        return redirect()->route('admin.companies.show', $companySlot->company_id)
+                         ->with('success', 'Data gelombang berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus gelombang dan KEMBALI ke halaman Detail Perusahaan
+     */
+    public function destroy(CompanySlot $companySlot)
+    {
+        $companyId = $companySlot->company_id;
         
-        // Menggunakan addMonthsNoOverflow agar aman di akhir bulan (misal Februari)
-        $endDate = $startDate->copy()->addMonthsNoOverflow($duration);
-
-        // 3. Simpan ke database
-        CompanySlot::create([
-            'company_id'        => $request->company_id,
-            'academic_year_id'  => $activeYear->id,
-            'major_id'          => $request->major_id,
-            'batch_name'        => $request->batch_name,
-            'quota'             => $request->quota,
-            'min_total_score'   => $request->min_total_score,
-            'min_absensi_score' => $request->min_absensi_score,
-            'start_date'        => $startDate->toDateString(),
-            'end_date'          => $endDate->toDateString(), // Disimpan otomatis
-        ]);
-
-        // 4. Kembali ke halaman daftar dengan pesan sukses
-        return redirect()->route('admin.company_slots.index')
-                         ->with('success', 'Gelombang lowongan berhasil dibuka. Tanggal penarikan jatuh pada: ' . $endDate->translatedFormat('d F Y'));
+        try {
+            $companySlot->delete();
+            return redirect()->route('admin.companies.show', $companyId)
+                             ->with('success', 'Gelombang lowongan berhasil dihapus.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghapus. Gelombang ini kemungkinan sudah berisi siswa yang diterima.');
+        }
     }
 }

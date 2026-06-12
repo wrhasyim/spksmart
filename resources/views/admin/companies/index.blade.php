@@ -38,7 +38,7 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Perusahaan</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak (Telp/Email)</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alamat Lengkap</th>
-                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi Pengelolaan</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -55,15 +55,19 @@
                                 {{ $company->address ?? 'Alamat belum diatur' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <a href="{{ route('admin.companies.edit', $company->id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded border border-indigo-200 transition duration-150">
+                                <div class="flex justify-end items-center space-x-2">
+                                    <a href="{{ route('admin.companies.show', $company->id) }}" class="text-white hover:bg-indigo-700 bg-indigo-600 px-3 py-1.5 rounded transition duration-150 font-bold text-xs flex items-center gap-1 shadow-sm">
+                                        💼 Kelola Kuota & Syarat
+                                    </a>
+
+                                    <a href="{{ route('admin.companies.edit', $company->id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2.5 py-1.5 rounded border border-indigo-200 transition duration-150 text-xs font-semibold">
                                         Ubah
                                     </a>
                                     
-                                    <form action="{{ route('admin.companies.destroy', $company->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data perusahaan ini? \n\nCatatan: Jika perusahaan sudah pernah digunakan di Gelombang Lowongan, sistem akan menolak penghapusan.')" class="inline-block">
+                                    <form action="{{ route('admin.companies.destroy', $company->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data perusahaan ini secara permanen?')" class="inline-block">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded border border-red-200 transition duration-150">
+                                        <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1.5 rounded border border-red-200 transition duration-150 text-xs font-semibold">
                                             Hapus
                                         </button>
                                     </form>
