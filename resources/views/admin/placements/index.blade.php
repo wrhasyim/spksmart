@@ -39,17 +39,21 @@
         </div>
         
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.spk.print', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm">
-                📄 Cetak PDF Laporan
-            </a>
-            
-            <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Sistem akan menghitung ulang nilai seluruh siswa dan mencocokkannya secara otomatis dengan kuota perusahaan. Lanjutkan?')">
-                @csrf
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm">
-                    ⚡ Proses Algoritma SMART
-                </button>
-            </form>
-        </div>
+    <a href="{{ route('admin.spk.export-excel', ['academic_year_id' => $selectedYearId]) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm gap-1.5">
+        📊 Export Excel
+    </a>
+
+    <a href="{{ route('admin.spk.print', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm">
+        📄 Cetak PDF Laporan
+    </a>
+    
+    <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Sistem akan menghitung ulang nilai seluruh siswa dan mencocokkannya secara otomatis dengan kuota perusahaan. Lanjutkan?')">
+        @csrf
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm">
+            ⚡ Proses Algoritma SMART
+        </button>
+    </form>
+</div>
     </div>
 
     @if(isset($chartData) && count($chartData) > 0)

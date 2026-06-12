@@ -75,6 +75,8 @@ Route::post('/students/import', [App\Http\Controllers\StudentController::class, 
 // Rute Penyesuaian Manual (Manual Override) Penempatan
 Route::get('/placements/{placement}/edit', [App\Http\Controllers\SpkController::class, 'edit'])->name('admin.placements.edit');
 Route::put('/placements/{placement}', [App\Http\Controllers\SpkController::class, 'update'])->name('admin.placements.update');
+
+Route::get('spk/export-excel', [App\Http\Controllers\SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
 });
 
 // MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita

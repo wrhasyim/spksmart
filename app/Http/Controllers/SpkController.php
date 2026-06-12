@@ -9,6 +9,8 @@ use App\Models\Placement;
 use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\PlacementsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SpkController extends Controller
 {
@@ -155,4 +157,14 @@ class SpkController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Intervensi penempatan manual berhasil dicatat dan diterapkan!');
     }
+    public function exportExcel(\Illuminate\Http\Request $request)
+{
+    // Mengambil parameter tahun ajaran, default ke tahun ajaran aktif jika kosong
+    $academicYearId = $request->get('academic_year_id', \App\Models\AcademicYear::where('is_active', true)->first()->id ?? 1);
+    
+    // Format penamaan file saat didownload
+    $filename = 'Rekap_Penempatan_Prakerin_Periode_' . date('Y_m_d_His') . '.xlsx';
+    
+    return Excel::download(new PlacementsExport($academicYearId), $filename);
+}
 }
