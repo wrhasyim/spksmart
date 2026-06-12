@@ -3,33 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Models\Major;
-use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
     /**
-     * Tampilkan daftar perusahaan dengan pagination 10 data per halaman (terikat tahun ajaran)
+     * Tampilkan daftar perusahaan (Master Data murni, tanpa filter tahun ajaran)
      */
     public function index(Request $request)
     {
-        $activeYear = AcademicYear::where('is_active', true)->first();
-        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
-        
-        $allYears = AcademicYear::all();
+        // Mengambil data perusahaan master dengan pagination
+        $companies = Company::orderBy('name', 'asc')->paginate(10);
 
-        // Mengambil data perusahaan menggunakan paginate(10) dan mempertahankan query string filter
-        $companies = Company::with(['major', 'academicYear'])
-            ->withCount(['placements' => function($query) use ($selectedYearId) {
-                $query->where('academic_year_id', $selectedYearId)
-                      ->whereNotNull('company_id');
-            }])
-            ->where('academic_year_id', $selectedYearId)
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('admin.companies.index', compact('companies', 'allYears', 'selectedYearId'));
+        return view('admin.companies.index', compact('companies'));
     }
 
     /**
@@ -37,9 +23,7 @@ class CompanyController extends Controller
      */
     public function create()
     {
-        $majors = Major::all();
-        $academicYears = AcademicYear::where('is_active', true)->get();
-        return view('admin.companies.create', compact('majors', 'academicYears'));
+        return view('admin.companies.create');
     }
 
     /**
@@ -47,23 +31,18 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
+        // Validasi HANYA UNTUK KOLOM YANG ADA DI TABEL companies
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'    => 'required|string|max:255',
             'address' => 'nullable|string',
-            'quota' => 'required|integer|min:1',
-            'major_id' => 'required|exists:majors,id',
-            'gender_requirement' => 'required|in:L,P,ALL',
-            'min_total_score' => 'required|numeric|min:0|max:100',
-            'min_absensi_score' => 'required|numeric|min:0|max:100',
-            'min_fisik_score' => 'required|numeric|min:0|max:100',
-            'min_keaktifan_score' => 'required|numeric|min:0|max:100',
-            'min_administrasi_score' => 'required|numeric|min:0|max:100',
-            'academic_year_id' => 'required|exists:academic_years,id',
+            'phone'   => 'nullable|string|max:50',
+            'email'   => 'nullable|email|max:255',
         ]);
 
         Company::create($validated);
 
-        return redirect()->route('admin.companies.index')->with('success', 'Perusahaan mitra berhasil ditambahkan.');
+        return redirect()->route('admin.companies.index')
+                         ->with('success', 'Perusahaan mitra berhasil ditambahkan.');
     }
 
     /**
@@ -71,9 +50,7 @@ class CompanyController extends Controller
      */
     public function edit(Company $company)
     {
-        $majors = Major::all();
-        $academicYears = AcademicYear::where('is_active', true)->get();
-        return view('admin.companies.edit', compact('company', 'majors', 'academicYears'));
+        return view('admin.companies.edit', compact('company'));
     }
 
     /**
@@ -81,23 +58,18 @@ class CompanyController extends Controller
      */
     public function update(Request $request, Company $company)
     {
+        // Validasi HANYA UNTUK KOLOM YANG ADA DI TABEL companies
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'    => 'required|string|max:255',
             'address' => 'nullable|string',
-            'quota' => 'required|integer|min:1',
-            'major_id' => 'required|exists:majors,id',
-            'gender_requirement' => 'required|in:L,P,ALL',
-            'min_total_score' => 'required|numeric|min:0|max:100',
-            'min_absensi_score' => 'required|numeric|min:0|max:100',
-            'min_fisik_score' => 'required|numeric|min:0|max:100',
-            'min_keaktifan_score' => 'required|numeric|min:0|max:100',
-            'min_administrasi_score' => 'required|numeric|min:0|max:100',
-            'academic_year_id' => 'required|exists:academic_years,id',
+            'phone'   => 'nullable|string|max:50',
+            'email'   => 'nullable|email|max:255',
         ]);
 
         $company->update($validated);
 
-        return redirect()->route('admin.companies.index')->with('success', 'Data perusahaan berhasil diperbarui.');
+        return redirect()->route('admin.companies.index')
+                         ->with('success', 'Data perusahaan berhasil diperbarui.');
     }
 
     /**
@@ -105,7 +77,13 @@ class CompanyController extends Controller
      */
     public function destroy(Company $company)
     {
-        $company->delete();
-        return redirect()->route('admin.companies.index')->with('success', 'Data perusahaan berhasil dihapus.');
+        try {
+            $company->delete();
+            return redirect()->route('admin.companies.index')
+                             ->with('success', 'Data perusahaan berhasil dihapus.');
+        } catch (\Exception $e) {
+            // Proteksi jika perusahaan tidak bisa dihapus karena sudah dipakai di tabel company_slots
+            return back()->with('error', 'Perusahaan tidak dapat dihapus karena masih terhubung dengan data Gelombang/Lowongan.');
+        }
     }
 }
