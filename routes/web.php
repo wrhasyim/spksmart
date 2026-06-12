@@ -8,6 +8,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\CompanySlotController;
 
 // Halaman utama publik
 Route::get('/', function () {
@@ -31,6 +32,9 @@ Route::middleware(['auth'])->group(function () {
     // 👇 TAMBAHKAN BARIS INI 👇
     Route::get('/spk/placement/{placement}/letter', [SpkController::class, 'printLetter'])->name('admin.spk.letter');
     
+    // Rute untuk Manajemen Slot/Gelombang Perusahaan (DIPERBAIKI PENAMAANNYA)
+    Route::resource('company_slots', CompanySlotController::class)->names('admin.company_slots');
+
     // Manajemen Profil (Opsional, jika masih digunakan)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

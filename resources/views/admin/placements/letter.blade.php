@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Surat Pengantar Prakerin</title>
     <style>
-        /* UBAH FONT-FAMILY MENJADI TIMES-ROMAN */
         body { font-family: 'Times-Roman', serif; font-size: 14px; line-height: 1.5; color: #000; margin: 20px 40px; }
         
         .kop-surat { text-align: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
@@ -12,13 +11,18 @@
         .kop-surat h2 { font-size: 20px; text-transform: uppercase; }
         .kop-surat h3 { font-size: 16px; font-weight: normal; }
         .kop-surat p { font-size: 12px; }
+        
         .info-surat { margin-bottom: 30px; }
         .info-surat table { width: 100%; border: none; }
         .info-surat td { padding: 2px 0; vertical-align: top; }
+        
         .content { text-align: justify; }
-        .content-table { width: 80%; margin: 20px auto; border-collapse: collapse; }
-        .content-table td { padding: 5px; border: 1px solid #000; }
-        .content-table td.label { width: 30%; font-weight: bold; }
+        
+        /* MODIFIKASI AREA TABEL DATA SISWA (Garis Hitam Dihilangkan) */
+        .content-table { width: 85%; margin: 15px 0 15px 20px; border-collapse: collapse; }
+        .content-table td { padding: 4px 0; border: none; } /* <-- border diubah menjadi none agar mulus */
+        .content-table td.label { width: 25%; font-weight: normal; }
+        
         .footer { margin-top: 50px; width: 100%; }
         .footer-table { width: 100%; text-align: center; }
         .ttd-space { height: 80px; }
