@@ -9,6 +9,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\CompanySlotController;
+use App\Http\Controllers\CriterionController;
 
 // Halaman utama publik
 Route::get('/', function () {
@@ -27,15 +28,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
     Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
     
-    // 👇 TAMBAHKAN BARIS INI UNTUK CETAK PDF 👇
+    // Rute Cetak PDF & Surat
     Route::get('/spk/print-pdf', [SpkController::class, 'printPdf'])->name('admin.spk.print');
-    // 👇 TAMBAHKAN BARIS INI 👇
     Route::get('/spk/placement/{placement}/letter', [SpkController::class, 'printLetter'])->name('admin.spk.letter');
     
-    // Rute untuk Manajemen Slot/Gelombang Perusahaan (DIPERBAIKI PENAMAANNYA)
+    // Rute untuk Manajemen Slot/Gelombang Perusahaan
     Route::resource('company_slots', CompanySlotController::class)->names('admin.company_slots');
 
-    // Manajemen Profil (Opsional, jika masih digunakan)
+    // Manajemen Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/companies/{company}/edit', [CompanyController::class, 'edit'])->name('admin.companies.edit');
     Route::put('/companies/{company}', [CompanyController::class, 'update'])->name('admin.companies.update');
     Route::delete('/companies/{company}', [CompanyController::class, 'destroy'])->name('admin.companies.destroy');
+    Route::get('/companies/{company}', [CompanyController::class, 'show'])->name('admin.companies.show');
 
     // Manajemen Tahun Ajaran
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('admin.academic-years.index');
@@ -59,26 +60,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/students/create', [StudentController::class, 'create'])->name('admin.students.create');
     Route::post('/students', [StudentController::class, 'store'])->name('admin.students.store');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
+    
+    // Rute Template & Import Excel Siswa
+    Route::get('/students/sample-excel', [StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
+    Route::post('/students/import', [StudentController::class, 'import'])->name('admin.students.import');
 
     // Input Nilai / Assessment Kriteria SMART
     Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
     Route::put('/students/{student}/assessment', [AssessmentController::class, 'update'])->name('admin.students.assessment.update');
 
-   // Rute untuk download template sample excel siswa
-Route::get('/students/sample-excel', [App\Http\Controllers\StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
-// Tambahkan baris rute detail ini jika belum tercover oleh Resource Controller
-Route::get('/companies/{company}', [App\Http\Controllers\CompanyController::class, 'show'])->name('admin.companies.show');
+    // Rute Penyesuaian Manual (Manual Override) Penempatan
+    Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
+    Route::put('/placements/{placement}', [SpkController::class, 'update'])->name('admin.placements.update');
 
-// Rute untuk memproses file excel yang di-upload
-Route::post('/students/import', [App\Http\Controllers\StudentController::class, 'import'])->name('admin.students.import');
+    // Ekspor Excel Rekapitulasi
+    Route::get('spk/export-excel', [SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
 
-// Rute Penyesuaian Manual (Manual Override) Penempatan
-Route::get('/placements/{placement}/edit', [App\Http\Controllers\SpkController::class, 'edit'])->name('admin.placements.edit');
-Route::put('/placements/{placement}', [App\Http\Controllers\SpkController::class, 'update'])->name('admin.placements.update');
-
-Route::get('spk/export-excel', [App\Http\Controllers\SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
-Route::put('/criterias/update', [App\Http\Controllers\CriterionController::class, 'update'])->name('admin.criterias.update');
-
+    // Manajemen Kriteria / Pembobotan (Full CRUD Resources)
 Route::resource('criterias', App\Http\Controllers\CriterionController::class)->names([
     'index'   => 'admin.criterias.index',
     'create'  => 'admin.criterias.create',
