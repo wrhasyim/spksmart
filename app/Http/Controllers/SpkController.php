@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\SmartEngineService;
 use App\Models\AcademicYear;
 use App\Models\Placement;
+use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -18,29 +19,22 @@ class SpkController extends Controller
         $this->smartEngine = $smartEngine;
     }
 
-    /**
-     * Tampilkan Dashboard Utama Rekomendasi Penempatan (Terbagi per 5 data per halaman)
-     */
     public function index(Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
-        
-        // Ambil ID tahun ajaran dari parameter GET, atau gunakan tahun ajaran aktif sebagai default
         $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
-        
         $allYears = AcademicYear::all();
         
         $placements = [];
         $chartData = [];
 
         if ($selectedYearId) {
-            // Membatasi tabel menjadi 5 siswa per halaman dan mempertahankan query string filter
             $placements = Placement::where('academic_year_id', $selectedYearId)
-                ->with(['student.major', 'company'])
+                // TAMBAHKAN 'student.assessment' DI SINI
+                ->with(['student.major', 'student.assessment', 'company']) 
                 ->paginate(5)
                 ->withQueryString();
 
-            // Mengambil data untuk grafik batang (Chart) tanpa pagination
             $chartData = Placement::select('company_id', DB::raw('count(*) as total'))
                 ->whereNotNull('company_id')
                 ->where('academic_year_id', $selectedYearId)
@@ -52,9 +46,6 @@ class SpkController extends Controller
         return view('admin.placements.index', compact('placements', 'activeYear', 'chartData', 'allYears', 'selectedYearId'));
     }
 
-    /**
-     * Jalankan Mesin Kalkulasi Matchmaking Algoritma SMART
-     */
     public function generate(Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
@@ -63,10 +54,6 @@ class SpkController extends Controller
             return back()->with('error', 'Tidak ada Tahun Ajaran yang sedang aktif.');
         }
 
-        // ==========================================
-        // FITUR BARU: Validasi Siswa Tanpa Nilai
-        // ==========================================
-        // Cek apakah ada siswa di tahun ajaran aktif yang tabel assessment-nya tidak ada
         $studentsWithoutAssessment = \App\Models\Student::where('academic_year_id', $activeYear->id)
                                         ->doesntHave('assessment')
                                         ->count();
@@ -74,7 +61,6 @@ class SpkController extends Controller
         if ($studentsWithoutAssessment > 0) {
             return back()->with('error', 'Gagal memproses! Terdapat ' . $studentsWithoutAssessment . ' siswa yang belum memiliki nilai. Harap lengkapi nilai seluruh siswa terlebih dahulu di menu Data Siswa.');
         }
-        // ==========================================
 
         try {
             $this->smartEngine->runMatchmaking($activeYear->id);
@@ -86,9 +72,6 @@ class SpkController extends Controller
         }
     }
 
-    /**
-     * Cetak Dokumen Hasil Rekomendasi ke format PDF (Ukuran Kertas A4 - Landscape)
-     */
     public function printPdf(Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
@@ -98,7 +81,6 @@ class SpkController extends Controller
             return back()->with('error', 'Tidak ada data Tahun Ajaran untuk dicetak.');
         }
 
-        // Ambil semua data siswa yang ditempatkan (tanpa pagination) khusus untuk dicetak ke PDF
         $placements = Placement::where('academic_year_id', $selectedYearId)
             ->with(['student.major', 'company'])
             ->orderBy('final_smart_score', 'desc')
@@ -106,36 +88,71 @@ class SpkController extends Controller
 
         $selectedYear = AcademicYear::find($selectedYearId);
 
-        // Render struktur HTML blade ke dalam bentuk PDF murni
         $pdf = Pdf::loadView('admin.placements.pdf', compact('placements', 'selectedYear'));
-        
-        // Atur orientasi kertas menjadi Landscape agar tabel kolom muat dengan lega
         $pdf->setPaper('a4', 'landscape');
 
-        // Proteksi: Ubah karakter ilegal '/' atau '\' dari nama tahun ajaran (misal 2026/2027 menjadi 2026-2027)
         $safeYearName = str_replace(['/', '\\'], '-', $selectedYear->name);
 
-        // Alirkan stream PDF langsung ke browser peninjau
         return $pdf->stream('Laporan_Penempatan_Prakerin_' . $safeYearName . '.pdf');
     }
     
     public function printLetter(Placement $placement)
     {
-        // Pastikan siswa ini memang diterima di sebuah perusahaan
         if (!$placement->company_id) {
             return back()->with('error', 'Surat tidak dapat dicetak karena siswa belum mendapatkan penempatan.');
         }
 
-        // Muat data relasi yang dibutuhkan untuk dicetak di surat
         $placement->load(['student.major', 'company', 'academicYear']);
 
-        // Load view khusus surat
         $pdf = Pdf::loadView('admin.placements.letter', compact('placement'));
-        
-        // Atur ukuran kertas ke A4 Portrait (Tegak)
         $pdf->setPaper('a4', 'portrait');
 
-        // Alirkan stream PDF langsung ke browser
         return $pdf->stream('Surat_Pengantar_' . str_replace(' ', '_', $placement->student->name) . '.pdf');
+    }
+
+    // ========================================================
+    // FITUR BARU: MANUAL OVERRIDE (PENYESUAIAN MANUAL)
+    // ========================================================
+
+    /**
+     * Menampilkan form edit untuk penyesuaian manual penempatan
+     */
+    public function edit(Placement $placement)
+    {
+        $placement->load(['student.major', 'student.assessment', 'company']);
+        $companies = Company::orderBy('name', 'asc')->get();
+        
+        return view('admin.placements.edit', compact('placement', 'companies'));
+    }
+
+    /**
+     * Menyimpan hasil perubahan manual penempatan ke database
+     */
+    public function update(Request $request, Placement $placement)
+    {
+        $validated = $request->validate([
+            'company_id'       => 'nullable|exists:companies,id',
+            'kategori_kasus'   => 'required|string|in:Kesehatan/Fisik Mendadak,Pelanggaran Disiplin Berat,Permintaan Khusus Industri,Kendala Darurat Keluarga/Domisili',
+            'detail_kronologi' => 'required|string|min:10|max:500' // Wajib diisi minimal 10 karakter
+        ]);
+
+        // Format ulang catatan agar menjadi rekam jejak intervensi yang resmi
+        $rekamJejak = "[INTERVENSI KEPALA HUBIN - KASUS: " . strtoupper($validated['kategori_kasus']) . "] " . $validated['detail_kronologi'];
+
+        // Simpan perubahan ke tabel placement dan ubah status metode menjadi manual
+        $placement->update([
+            'company_id'       => $validated['company_id'],
+            'notes'            => $rekamJejak,
+            'placement_method' => 'MANUAL_OVERRIDE'
+        ]);
+
+        // Sesuaikan kembali status siswa di tabel students
+        if ($validated['company_id']) {
+            $placement->student->update(['status' => 'lolos_prakerin']);
+        } else {
+            $placement->student->update(['status' => 'pembinaan']);
+        }
+
+        return redirect()->route('dashboard')->with('success', 'Intervensi penempatan manual berhasil dicatat dan diterapkan!');
     }
 }

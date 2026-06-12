@@ -71,6 +71,10 @@ Route::get('/companies/{company}', [App\Http\Controllers\CompanyController::clas
 
 // Rute untuk memproses file excel yang di-upload
 Route::post('/students/import', [App\Http\Controllers\StudentController::class, 'import'])->name('admin.students.import');
+
+// Rute Penyesuaian Manual (Manual Override) Penempatan
+Route::get('/placements/{placement}/edit', [App\Http\Controllers\SpkController::class, 'edit'])->name('admin.placements.edit');
+Route::put('/placements/{placement}', [App\Http\Controllers\SpkController::class, 'update'])->name('admin.placements.update');
 });
 
 // MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
