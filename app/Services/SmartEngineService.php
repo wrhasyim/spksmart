@@ -40,32 +40,34 @@ class SmartEngineService
     /**
      * Menghitung Skor Akhir SMART dari satu Assessment.
      */
+    /**
+     * Menghitung Skor Akhir SMART dari satu Assessment secara dinamis.
+     */
     public function calculateScore($assessment): float
     {
         $weights = $this->getNormalizedWeights();
+        $criterias = Criterion::all(); // Membaca semua kriteria yang ada di database
         $score = 0;
 
-        // 1. Kriteria Benefit (Menggunakan bobot dinamis dari tabel criterias)
-        // Absensi
-        $utilityAbsensi = ($assessment->absensi - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
-        $score += $utilityAbsensi * ($weights['absensi'] ?? 0);
+        foreach ($criterias as $crit) {
+            $code = $crit->code;
+            $type = strtolower($crit->type);
+            $weight = $weights[$code] ?? 0;
 
-        // Fisik & Mental
-        $utilityFisik = ($assessment->fisik_mental - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
-        $score += $utilityFisik * ($weights['fisik'] ?? 0);
+            // Ambil nilai asli dari tabel assessments berdasarkan 'code' kriteria
+            // (Pastikan nama kolom di tabel assessments sama dengan 'code' kriteria)
+            $val = $assessment->$code ?? 0;
 
-        // Keaktifan
-        $utilityAktif = ($assessment->keaktifan - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
-        $score += $utilityAktif * ($weights['aktif'] ?? 0);
-
-        // Administrasi
-        $utilityAdmin = ($assessment->administrasi - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
-        $score += $utilityAdmin * ($weights['admin'] ?? 0);
-
-        // 2. Kriteria Cost (Catatan Kasus)
-        // Rumus Cost: (C_max - C_out) / (C_max - C_min)
-        $utilityCost = ($this->bounds['max'] - $assessment->catatan_kasus) / ($this->bounds['max'] - $this->bounds['min']);
-        $score += $utilityCost * ($weights['kasus'] ?? 0);
+            if ($type === 'benefit') {
+                // Rumus Benefit: (C_out - C_min) / (C_max - C_min)
+                $utility = ($val - $this->bounds['min']) / ($this->bounds['max'] - $this->bounds['min']);
+                $score += $utility * $weight;
+            } elseif ($type === 'cost') {
+                // Rumus Cost: (C_max - C_out) / (C_max - C_min)
+                $utility = ($this->bounds['max'] - $val) / ($this->bounds['max'] - $this->bounds['min']);
+                $score += $utility * $weight;
+            }
+        }
 
         // Kembalikan nilai dalam bentuk puluhan (0-100)
         return round($score * 100, 2);
