@@ -1,6 +1,6 @@
 @extends('layouts.hubin')
 
-@section('title', 'Dasbor Penempatan')
+@section('title', 'Proses SPK Aktif')
 
 @section('content')
 <div class="max-w-7xl mx-auto space-y-8">
@@ -31,14 +31,14 @@
             </select>
         </div>
         <div class="text-xs font-medium text-gray-400">
-            *Data rekapitulasi di bawah terikat secara spesifik pada periode tahun ajaran yang dipilih.
+            *Daftar siswa di bawah terikat secara spesifik pada periode tahun ajaran yang dipilih.
         </div>
     </form>
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-5 gap-4">
         <div>
-            <h1 class="text-2xl font-black text-gray-900">Dashboard Penempatan Prakerin</h1>
-            <p class="text-sm text-gray-500 mt-1">Hasil kalkulasi algoritma SPK serta rekap penempatan industri siswa.</p>
+            <h1 class="text-2xl font-black text-gray-900">Manajemen Proses SPK Aktif</h1>
+            <p class="text-sm text-gray-500 mt-1">Jalankan algoritma SMART, tinjau hasil kalkulasi, dan berikan persetujuan (ACC) penempatan.</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
             <a href="{{ route('admin.spk.export_excel', ['academic_year_id' => $selectedYearId]) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl shadow-sm font-bold transition flex items-center text-sm gap-2">
@@ -61,15 +61,6 @@
         </div>
     </div>
 
-    @if(isset($chartData) && count($chartData) > 0)
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 class="text-base font-extrabold text-gray-800 mb-4 border-b border-gray-50 pb-3">Statistik Persebaran Penempatan Industri</h2>
-            <div class="w-full mx-auto relative h-80">
-                <canvas id="companyBarChart"></canvas>
-            </div>
-        </div>
-    @endif
-
     <div class="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-100">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-100">
@@ -79,7 +70,7 @@
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kelas / Jurusan</th>
                         <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Skor SMART</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Penempatan Industri</th>
-                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Status & Dokumen</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Status & Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
@@ -111,7 +102,19 @@
                                     </div>
                                 @endif
                             @else
-                                <span class="text-red-500 font-black text-xs tracking-tight italic bg-red-50 px-2.5 py-1 rounded-lg border border-red-100 inline-block">Sistem Pembinaan</span>
+                                @if($placement->status_pencocokan === 'waiting_list')
+                                    <span class="text-amber-600 font-black text-xs tracking-tight italic bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 inline-block">⏳ Waiting List (Menunggu Kuota)</span>
+                                @else
+                                    <span class="text-red-500 font-black text-xs tracking-tight italic bg-red-50 px-2.5 py-1 rounded-lg border border-red-100 inline-block">⚠️ Sistem Pembinaan</span>
+                                @endif
+                                
+                                @if($placement->notes && $placement->placement_method === 'SYSTEM')
+                                    <div class="mt-1.5">
+                                        <button type="button" onclick="openJustifikasiModal({{ $placement->id }})" class="text-[10px] font-black text-red-600 hover:text-red-800 hover:underline bg-red-50 px-2 py-0.5 rounded-lg border border-red-100 mt-0.5 shadow-sm">
+                                            👁️ Lihat Alasan Detail
+                                        </button>
+                                    </div>
+                                @endif
                             @endif
 
                             @if($placement->placement_method === 'MANUAL_OVERRIDE')
@@ -122,9 +125,14 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                             <div class="flex flex-col gap-1.5 items-end">
+                                
                                 <div class="flex gap-2 items-center">
                                     @if($placement->company_id)
-                                        <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-green-50 text-green-800 border border-green-200 tracking-wider">Lolos Penempatan</span>
+                                        @if($placement->status_pencocokan === 'final')
+                                            <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-green-50 text-green-800 border border-green-200 tracking-wider">✅ Final / Di-ACC</span>
+                                        @else
+                                            <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-blue-50 text-blue-800 border border-blue-200 tracking-wider">⏳ Menunggu ACC</span>
+                                        @endif
                                     @else
                                         <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-red-50 text-red-800 border border-red-200 tracking-wider">Perlu Penilaian</span>
                                     @endif
@@ -133,23 +141,28 @@
                                         🧮 Transparansi Hitung
                                     </button>
                                 </div>
-
+                        
                                 <div class="flex items-center gap-2 mt-0.5">
-                                    @if($placement->company_id)
-                                        <a href="{{ route('admin.spk.print_letter', $placement->id) }}" target="_blank" class="text-xs font-bold text-gray-500 hover:text-indigo-600 hover:underline bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100 transition">
-                                            📄 Surat Pengantar
-                                        </a>
+                                    @if($placement->status_pencocokan !== 'final')
+                                        <form action="{{ route('admin.spk.approve', $placement->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            <button type="submit" onclick="return confirm('ACC keputusan ini?')" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:underline bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 transition flex items-center gap-0.5 shadow-sm">
+                                                ✅ ACC Hubin
+                                            </button>
+                                        </form>
                                     @endif
-                                    <a href="{{ route('admin.placements.edit', $placement->id) }}" class="text-xs font-black text-amber-600 hover:text-amber-800 hover:underline bg-amber-50/50 px-2.5 py-1 rounded-lg border border-amber-100 transition flex items-center gap-0.5">
+                                    
+                                    <a href="{{ route('admin.placements.edit', $placement->id) }}" class="text-xs font-black text-amber-600 hover:text-amber-800 hover:underline bg-amber-50/50 px-2.5 py-1 rounded-lg border border-amber-100 transition flex items-center gap-0.5 shadow-sm">
                                         ⚙️ Intervensi Manual
                                     </a>
                                 </div>
-
+                        
                                 @if($placement->placement_method === 'MANUAL_OVERRIDE')
                                     <button type="button" onclick="openJustifikasiModal({{ $placement->id }})" class="text-[10px] font-black text-red-600 hover:text-red-800 hover:underline bg-red-50 px-2 py-0.5 rounded-lg border border-red-100 mt-0.5">
                                         👁️ Lihat Alasan Kronologi
                                     </button>
                                 @endif
+                                
                             </div>
                         </td>
                     </tr>
@@ -184,6 +197,7 @@
         $totalWeight = $allCriterias->sum('weight') > 0 ? $allCriterias->sum('weight') : 1;
         $totalScoreAccumulation = 0;
     @endphp
+    
     <div id="calc-modal-{{ $placement->id }}" class="fixed inset-0 bg-gray-900/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
         <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border-t-4 border-indigo-600 flex flex-col max-h-[85vh]">
             <div class="p-6 border-b border-gray-100 flex justify-between items-start flex-shrink-0 bg-gray-50/50">
@@ -257,24 +271,26 @@
         </div>
     </div>
 
-    @if($placement->placement_method === 'MANUAL_OVERRIDE')
+    @if($placement->placement_method === 'MANUAL_OVERRIDE' || (!$placement->company_id && $placement->notes))
         <div id="justifikasi-modal-{{ $placement->id }}" class="fixed inset-0 bg-gray-900/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
             <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 border-t-4 border-amber-500">
                 <div class="flex justify-between items-start mb-5">
                     <div>
-                        <h3 class="text-base font-black text-gray-900">📄 Berita Acara Intervensi Manual</h3>
+                        <h3 class="text-base font-black text-gray-900">
+                            📄 {{ $placement->placement_method === 'MANUAL_OVERRIDE' ? 'Berita Acara Intervensi Manual' : 'Detail Alasan Penempatan' }}
+                        </h3>
                         <p class="text-xs font-bold text-gray-400 mt-0.5">Siswa: {{ $placement->student->name }}</p>
                     </div>
                     <button type="button" onclick="closeJustifikasiModal({{ $placement->id }})" class="text-gray-400 hover:text-red-600 font-extrabold text-2xl">&times;</button>
                 </div>
                 
-                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed font-bold shadow-inner">
-                    {!! nl2br(e($placement->notes)) !!}
+                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed font-bold shadow-inner whitespace-pre-wrap">
+                    {{ $placement->notes }}
                 </div>
                 
                 <div class="mt-6 flex justify-end">
                     <button type="button" onclick="closeJustifikasiModal({{ $placement->id }})" class="bg-gray-800 hover:bg-gray-900 text-white font-extrabold text-xs px-6 py-3 rounded-xl shadow-sm transition">
-                        Tutup Berita Acara
+                        Tutup Modal
                     </button>
                 </div>
             </div>
@@ -297,47 +313,4 @@
         document.getElementById('justifikasi-modal-' + id).classList.add('hidden'); 
     }
 </script>
-
-@if(isset($chartData) && count($chartData) > 0)
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const chartData = @json($chartData);
-        const labels = chartData.map(item => {
-            let name = item.company ? item.company.name : 'Tidak Diketahui';
-            return name.length > 20 ? name.substring(0, 20) + '...' : name;
-        });
-        const dataCounts = chartData.map(item => item.total);
-
-        const ctx = document.getElementById('companyBarChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Siswa Ditempatkan',
-                    data: dataCounts,
-                    backgroundColor: 'rgba(79, 70, 229, 0.8)',
-                    borderColor: 'rgba(67, 56, 202, 1)',
-                    borderWidth: 1.5,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { stepSize: 1, font: { weight: 'bold' } } 
-                    },
-                    x: {
-                        ticks: { font: { weight: 'bold' } }
-                    }
-                }
-            }
-        });
-    });
-</script>
-@endif
 @endsection

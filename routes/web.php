@@ -66,7 +66,13 @@ Route::middleware(['auth'])->group(function () {
     // ------------------------------------------
     // DASHBOARD & MESIN SPK
     // ------------------------------------------
-    Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
+    // 1. Dasbor Utama (Sekarang memuat halaman dashboard.blade.php yang bersih)
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    // 2. Ruang Kerja Proses SPK Aktif (Memuat tabel SPK yang sebelumnya ada di dashboard)
+    Route::get('/placements', [SpkController::class, 'index'])->name('admin.placements.index');
     Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
     Route::get('/history', [SpkController::class, 'history'])->name('admin.spk.history');
     // Rute Pembaruan Password

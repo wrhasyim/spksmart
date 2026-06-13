@@ -32,7 +32,7 @@ class CompanyController extends Controller
 
         $slots = CompanySlot::where('company_id', $company->id)
             ->where('academic_year_id', $selectedYearId)
-            ->with('major')
+            ->with('majors')
             ->get()
             ->map(function ($slot) {
                 // LOGIKA BARU: Hitung siswa HANYA berdasarkan company_slot_id ini

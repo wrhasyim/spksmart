@@ -59,13 +59,33 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Nama Posisi / Bagian (Opsional)</label>
-                        <input type="text" name="position_name" placeholder="Contoh: IT Support / Administrasi" class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 bg-gray-50">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Nama Gelombang <span class="text-red-500">*</span></label>
+                        <input type="text" name="batch_name" placeholder="Contoh: Gelombang 1 / Reguler" class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 bg-gray-50" required>
                     </div>
 
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Jumlah Kuota Siswa <span class="text-red-500">*</span></label>
                         <input type="number" name="quota" min="1" placeholder="Contoh: 5" class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 bg-gray-50" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Persyaratan Gender <span class="text-red-500">*</span></label>
+                        <select name="gender_requirement" class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 bg-gray-50" required>
+                            <option value="Semua">Semua Gender</option>
+                            <option value="L">Khusus Laki-laki</option>
+                            <option value="P">Khusus Perempuan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Min. Skor SMART <span class="text-red-500">*</span></label>
+                        <input type="number" name="min_total_score" step="0.01" value="0" class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 bg-gray-50" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Min. Skor Absensi <span class="text-red-500">*</span></label>
+                        <input type="number" name="min_absensi_score" step="0.01" value="0" class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-3 bg-gray-50" required>
                     </div>
                 </div>
 

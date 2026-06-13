@@ -10,11 +10,10 @@ class CompanySlot extends Model
 {
     use HasFactory, SoftDeletes;
 
-    // Tambahkan semua kolom baru ke dalam array fillable ini
     protected $fillable = [
         'company_id',
         'academic_year_id',
-        'major_id', // Pastikan major_id juga masuk!
+        // 'major_id' dihapus karena sekarang menggunakan tabel pivot company_slot_major
         'batch_name',
         'gender_requirement',
         'quota',
@@ -36,8 +35,12 @@ class CompanySlot extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    public function major()
+    /**
+     * Relasi Many-to-Many ke Major
+     * 1 Slot bisa memiliki banyak jurusan
+     */
+    public function majors()
     {
-        return $this->belongsTo(Major::class);
+        return $this->belongsToMany(Major::class, 'company_slot_major', 'company_slot_id', 'major_id');
     }
 }

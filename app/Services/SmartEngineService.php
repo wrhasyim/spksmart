@@ -12,7 +12,6 @@ class SmartEngineService
 {
     private $bounds = ['min' => 0, 'max' => 100];
 
-    // Menghitung bobot normalisasi secara dinamis dari tabel kriteria
     private function getNormalizedWeights(): array
     {
         $criterias = Criterion::all();
@@ -21,28 +20,22 @@ class SmartEngineService
 
         $normalized = [];
         foreach ($criterias as $criterion) {
-            // Gunakan ID kriteria sebagai key, agar cocok dengan JSON scores_data
             $normalized[$criterion->id] = $criterion->weight / $totalWeight;
         }
         return $normalized;
     }
 
-    // Menghitung skor SMART murni membaca dari JSON
     public function calculateScore($assessment): float
     {
         $weights = $this->getNormalizedWeights();
         $criterias = Criterion::all(); 
         $score = 0;
-
-        // Ambil data JSON array
         $scoresData = $assessment->scores_data ?? [];
 
         foreach ($criterias as $crit) {
             $id = $crit->id;
             $type = strtolower($crit->type);
             $weight = $weights[$id] ?? 0;
-            
-            // Ambil nilai dari JSON, jika belum ada set 0
             $val = $scoresData[$id] ?? 0;
 
             if ($type === 'benefit') {
@@ -56,13 +49,9 @@ class SmartEngineService
         return round($score * 100, 2);
     }
 
-    // Mengambil nilai Absensi secara spesifik dari JSON
-    // (Asumsi: Anda harus memastikan nama/kata 'absen' ada di Kriteria Absensi)
     private function getAbsensiScore($assessment): float
     {
         $scoresData = $assessment->scores_data ?? [];
-        
-        // Cari ID kriteria yang mengandung kata 'absen' atau 'kehadiran'
         $absensiCriterion = Criterion::where('name', 'like', '%absen%')
                                      ->orWhere('name', 'like', '%hadir%')
                                      ->first();
@@ -70,75 +59,127 @@ class SmartEngineService
         if ($absensiCriterion) {
             return (float) ($scoresData[$absensiCriterion->id] ?? 0);
         }
-
-        return 0; // Jika tidak ditemukan, default 0
+        return 0;
     }
 
-    // Proses Utama Pencocokan (Matchmaking)
     public function runMatchmaking($academicYearId)
     {
         DB::beginTransaction();
         try {
-            // 1. CLEANUP (Hapus history pencocokan sistem yang lama/gagal)
-            // Hanya hapus yang by SYSTEM, biarkan MANUAL_OVERRIDE tetap ada
+            // 1. CLEANUP: Hapus rekaman sistem lama (kecuali yang FINAL)
             Placement::where('academic_year_id', $academicYearId)
-                     ->where('placement_method', 'SYSTEM')
+                     ->where(function($query) {
+                         $query->where('status_pencocokan', '!=', 'final')
+                               ->orWhereNull('status_pencocokan');
+                     })
+                     ->where('placement_method', 'SYSTEM') 
                      ->delete();
 
-            // Kembalikan status siswa yang sebelumnya lulus karena sistem, menjadi belum prakerin
             Student::where('academic_year_id', $academicYearId)
                    ->whereDoesntHave('placement', function($query) {
-                       // Siswa yang tidak punya penempatan manual
-                       $query->where('placement_method', 'MANUAL_OVERRIDE');
+                       $query->where('placement_method', 'MANUAL_OVERRIDE')
+                             ->orWhere('status_pencocokan', 'final');
                    })
                    ->update(['status' => 'belum_prakerin']); 
                    
-            // Ambil siswa yang BELUM Lolos (Bypass siswa yang sudah di-lock manual)
             $students = Student::where('academic_year_id', $academicYearId)
                 ->where('status', '!=', 'lolos_prakerin')
                 ->with(['assessment', 'major'])
                 ->get();
 
-            // Load Slot yang aktif pada periode tersebut
-            $companySlots = CompanySlot::where('academic_year_id', $academicYearId)->get();
+            // Load Slot dengan relasi Majors (Many-to-Many)
+            $companySlots = CompanySlot::with(['company', 'majors'])->where('academic_year_id', $academicYearId)->get();
             
-            // Hitung ketersediaan kuota aktual per slot
             foreach ($companySlots as $slot) {
-                $used = Placement::where('company_slot_id', $slot->id)->count();
+                $used = Placement::where('company_slot_id', $slot->id)
+                                 ->where('status_pencocokan', 'final')
+                                 ->count();
                 $slot->available_quota = max(0, $slot->quota - $used);
             }
 
-            // Hitung Skor Total SMART & Ekstrak Nilai Absensi
             foreach ($students as $student) {
                 if (!$student->assessment) {
                     $student->final_score = 0;
                     $student->absensi_score = 0;
                     continue; 
                 }
-                
                 $student->final_score = $this->calculateScore($student->assessment);
                 $student->absensi_score = $this->getAbsensiScore($student->assessment);
             }
 
-            // Urutkan siswa secara *descending* (Skor Tertinggi lebih dulu diutamakan)
             $students = $students->sortByDesc('final_score');
 
             // 2. PROSES PENEMPATAN
             foreach ($students as $student) {
-                foreach ($companySlots as $slot) {
-                    if ($this->tryPlaceStudent($student, $slot, $academicYearId)) {
-                        break; // Jika masuk, lanjut ke siswa berikutnya
+                $isPlaced = false;
+                $failReasons = [];
+                $passedScoreAtLeastOnce = false; // Flag untuk Waiting List
+
+                // Cari slot yang jurusannya cocok
+                $relevantSlots = $companySlots->filter(function($slot) use ($student) {
+                    return $slot->majors->contains($student->major_id);
+                });
+
+                if ($relevantSlots->isEmpty()) {
+                    $failReasons[] = "- Tidak ada mitra industri untuk jurusan {$student->major->code}.";
+                    $passedScoreAtLeastOnce = true;
+                } else {
+                    $companyReasons = [];
+
+                    foreach ($relevantSlots as $slot) {
+                        $res = $this->tryPlaceStudentWithReason($student, $slot, $academicYearId);
+                        
+                        if ($res['status'] === true) {
+                            $isPlaced = true;
+                            break; 
+                        } else {
+                            if ($res['type'] === 'kuota') {
+                                $passedScoreAtLeastOnce = true; // Skor oke, tapi kuota habis
+                            }
+                            
+                            $companyReasons[$slot->company_id][] = [
+                                'company_name' => $slot->company->name,
+                                'batch_name'   => $slot->batch_name ?? 'Utama',
+                                'type'         => $res['type'],
+                                'message'      => $res['message']
+                            ];
+                        }
+                    }
+
+                    if (!$isPlaced) {
+                        foreach ($companyReasons as $compId => $reasons) {
+                            $hasNonGenderReason = false;
+                            foreach ($reasons as $r) {
+                                if ($r['type'] !== 'gender') { $hasNonGenderReason = true; break; }
+                            }
+
+                            foreach ($reasons as $r) {
+                                if ($hasNonGenderReason && $r['type'] === 'gender') continue;
+                                $failReasons[] = "- {$r['company_name']} ({$r['batch_name']}): {$r['message']}";
+                            }
+                        }
                     }
                 }
-            }
 
-            // Siswa yang sisa ditandai pembinaan
-            Student::where('academic_year_id', $academicYearId)
-                ->where('status', '!=', 'lolos_prakerin')
-                ->whereDoesntHave('placement', function($q) {
-                    $q->whereNotNull('company_id');
-                })
-                ->update(['status' => 'pembinaan']);
+                if (!$isPlaced) {
+                    // Logic: Lolos nilai tapi kuota habis = Waiting List. Tidak lolos nilai = Pembinaan.
+                    $placementStatus = $passedScoreAtLeastOnce ? 'waiting_list' : 'pembinaan';
+
+                    Placement::create([
+                        'student_id'        => $student->id,
+                        'company_id'        => null,
+                        'company_slot_id'   => null,
+                        'final_smart_score' => $student->final_score,
+                        'placement_method'  => 'SYSTEM',
+                        'status_pencocokan' => $placementStatus,
+                        'notes'             => "ALASAN DETAIL SISTEM:\n" . implode("\n", $failReasons),
+                        'academic_year_id'  => $academicYearId
+                    ]);
+                    
+                    \App\Models\Student::where('id', $student->id)->update(['status' => $placementStatus]);
+                    $student->status = $placementStatus;
+                }
+            }
 
             DB::commit();
             return true;
@@ -149,53 +190,41 @@ class SmartEngineService
         }
     }
 
-    // Syarat Lolos ke Perusahaan (Logika Filtering yang Lebih Ketat)
-    private function tryPlaceStudent($student, $companySlot, $academicYearId): bool
+    private function tryPlaceStudentWithReason($student, $companySlot, $academicYearId)
     {
-        // 1. Cek Ketersediaan Kuota
-        if ($companySlot->available_quota <= 0) return false;
-
-        // 2. CEK JURUSAN (Sekarang One-to-Many di tabel company_slots)
-        if ($companySlot->major_id !== $student->major_id) {
-            return false;
+        // 1. CEK GENDER (Jurusan sudah difilter di atas)
+        if ($companySlot->gender_requirement !== 'Semua' && $companySlot->gender_requirement !== $student->gender) {
+            return ['status' => false, 'type' => 'gender', 'message' => "Khusus " . ($companySlot->gender_requirement === 'L' ? 'Laki-laki' : 'Perempuan')];
         }
 
-        // 3. CEK PERSYARATAN GENDER
-        if ($companySlot->gender_requirement !== 'Semua') {
-            if ($companySlot->gender_requirement !== $student->gender) {
-                return false;
-            }
-        }
-
-        // 4. CEK MINIMAL SKOR TOTAL SPK
+        // 2. CEK SKOR KUALITAS
         if ($student->final_score < $companySlot->min_total_score) {
-            return false;
+            return ['status' => false, 'type' => 'score', 'message' => "Skor SMART rendah."];
         }
-
-        // 5. CEK MINIMAL SKOR ABSENSI
         if ($student->absensi_score < $companySlot->min_absensi_score) {
-            return false;
+            return ['status' => false, 'type' => 'score', 'message' => "Skor Absensi rendah."];
         }
 
-        // Jika semua filter lolos, Eksekusi Penempatan!
+        // 3. CEK KUOTA
+        if ($companySlot->available_quota <= 0) {
+            return ['status' => false, 'type' => 'kuota', 'message' => "Nilai memenuhi, tetapi Kuota penuh."];
+        }
+
+        // LOLOS
         Placement::create([
             'student_id'        => $student->id,
             'company_id'        => $companySlot->company_id, 
             'company_slot_id'   => $companySlot->id,
             'final_smart_score' => $student->final_score,
             'placement_method'  => 'SYSTEM',
+            'status_pencocokan' => 'rekomendasi',
             'academic_year_id'  => $academicYearId
         ]);
 
         $companySlot->available_quota--; 
-        
-        // PERBAIKAN: Gunakan Query Builder agar Laravel murni hanya memperbarui kolom status di database.
-        // Ini mencegah properti temporary (final_score, absensi_score) ikut terdorong ke dalam query SQL.
-        \App\Models\Student::where('id', $student->id)->update(['status' => 'lolos_prakerin']);
-        
-        // Sesuaikan status pada objek yang sedang di-loop di memory agar tetap sinkron
-        $student->status = 'lolos_prakerin';
+        \App\Models\Student::where('id', $student->id)->update(['status' => 'proses_seleksi']);
+        $student->status = 'proses_seleksi';
 
-        return true;
+        return ['status' => true];
     }
 }

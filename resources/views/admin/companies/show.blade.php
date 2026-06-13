@@ -64,32 +64,6 @@
         </button>
     </div>
 
-    @if (session('success'))
-        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm animate-fade-in">
-            <div class="flex items-center mb-2 font-bold">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Gagal Menyimpan Kuota:
-            </div>
-            <ul class="list-disc list-inside space-y-1 ml-2 text-xs">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                document.getElementById('createSlotModal').classList.remove('hidden');
-            });
-        </script>
-    @endif
-
     <div class="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-100">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-100">
@@ -108,9 +82,15 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="font-extrabold text-gray-900 text-sm">{{ $slot->batch_name }}</span>
                             <br>
-                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mt-1 inline-block">
-                                {{ $slot->major->name ?? 'Semua Jurusan' }}
-                            </span>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                @forelse($slot->majors as $major)
+                                    <span class="text-[10px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                                        {{ $major->code }}
+                                    </span>
+                                @empty
+                                    <span class="text-xs text-gray-400">Tidak ada jurusan</span>
+                                @endforelse
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="font-extrabold text-lg text-gray-900">{{ $slot->quota }}</span> <span class="text-xs text-gray-500">Orang</span>
@@ -119,32 +99,20 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-xs text-gray-600">Skor Total: <strong class="text-gray-900">{{ $slot->min_total_score }}</strong></div>
-                            <div class="text-xs text-gray-600 mt-1">Skor Absensi: <strong class="text-gray-900">{{ $slot->min_absensi_score }}</strong></div>
+                            <div class="text-xs text-gray-600 mt-1">Absensi: <strong class="text-gray-900">{{ $slot->min_absensi_score }}</strong></div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-xs font-medium text-gray-900">{{ \Carbon\Carbon::parse($slot->start_date)->format('d M Y') }}</div>
-                            <div class="text-xs text-gray-400 mt-0.5">s/d</div>
-                            <div class="text-xs font-medium text-gray-900">{{ \Carbon\Carbon::parse($slot->end_date)->format('d M Y') }}</div>
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
+                            {{ \Carbon\Carbon::parse($slot->start_date)->format('d M') }} - {{ \Carbon\Carbon::parse($slot->end_date)->format('d M Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <form action="{{ route('admin.company_slots.destroy', $slot->id) }}" method="POST" onsubmit="return confirm('Hapus alokasi kuota ini?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-gray-400 hover:text-red-600 transition">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-gray-400 hover:text-red-600 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                             </form>
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="5" class="px-6 py-12 text-center">
-                            <div class="flex flex-col items-center justify-center text-gray-400">
-                                <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                <p class="font-medium">Belum ada kuota / slot yang dibuka untuk periode ini.</p>
-                            </div>
-                        </td>
-                    </tr>
+                    <tr><td colspan="5" class="px-6 py-12 text-center text-gray-400 font-bold">Belum ada kuota untuk periode ini.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -153,9 +121,9 @@
 </div>
 
 <div id="createSlotModal" class="hidden fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-100 overflow-hidden my-8 animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 animate-fade-in">
         <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <h3 class="text-lg font-bold text-gray-900">Buka Kuota / Gelombang Baru</h3>
+            <h3 class="text-lg font-bold text-gray-900">Buka Kuota Baru</h3>
             <button onclick="document.getElementById('createSlotModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
         </div>
         
@@ -165,65 +133,58 @@
             <input type="hidden" name="academic_year_id" value="{{ $selectedYearId }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                
                 <div class="md:col-span-2">
                     <label class="block text-sm font-bold text-gray-700 mb-2">Nama Gelombang (Batch)</label>
-                    <input type="text" name="batch_name" value="{{ old('batch_name') }}" required placeholder="Cth: Gelombang 1 - 2026" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                    <input type="text" name="batch_name" required placeholder="Cth: Gelombang 1" class="block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 text-sm">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Program Keahlian (Jurusan)</label>
-                    <select name="major_id" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">Pilih Jurusan yang Dapat Melamar</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
                         @foreach($majors as $major)
-                            <option value="{{ $major->id }}" {{ old('major_id') == $major->id ? 'selected' : '' }}>{{ $major->name }}</option>
+                            <label class="flex items-center p-2 bg-white rounded border border-gray-200 cursor-pointer hover:border-indigo-300">
+                                <input type="checkbox" name="major_ids[]" value="{{ $major->id }}" class="rounded text-indigo-600">
+                                <span class="ml-2 text-xs font-bold text-gray-700">{{ $major->code }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
 
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Persyaratan Gender</label>
-                    <select name="gender_requirement" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
-                        <option value="Semua" {{ old('gender_requirement') == 'Semua' ? 'selected' : '' }}>Semua Gender (L & P)</option>
-                        <option value="L" {{ old('gender_requirement') == 'L' ? 'selected' : '' }}>Hanya Laki-laki (L)</option>
-                        <option value="P" {{ old('gender_requirement') == 'P' ? 'selected' : '' }}>Hanya Perempuan (P)</option>
+                    <select name="gender_requirement" class="block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 text-sm">
+                        <option value="Semua">Semua</option>
+                        <option value="L">Hanya Laki-laki</option>
+                        <option value="P">Hanya Perempuan</option>
                     </select>
                 </div>
-
                 <div>
-                    <label class="block text-sm font-bold text-indigo-700 mb-2">Total Kuota (Orang)</label>
-                    <input type="number" name="quota" required min="1" value="{{ old('quota') }}" placeholder="Cth: 10" class="block w-full rounded-xl border-indigo-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-indigo-50 focus:bg-white transition font-bold text-indigo-900">
+                    <label class="block text-sm font-bold text-indigo-700 mb-2">Total Kuota</label>
+                    <input type="number" name="quota" required min="1" class="block w-full rounded-xl border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-bold">
                 </div>
-
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Minimal Skor Total SPK</label>
-                    <input type="number" step="0.01" name="min_total_score" required min="0" value="{{ old('min_total_score', 0) }}" placeholder="Cth: 75.5" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Min. Skor Total</label>
+                    <input type="number" step="0.01" name="min_total_score" value="0" class="block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 text-sm">
                 </div>
-
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Minimal Skor Kehadiran</label>
-                    <input type="number" step="0.01" name="min_absensi_score" required min="0" value="{{ old('min_absensi_score', 0) }}" placeholder="Cth: 80" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Min. Skor Absensi</label>
+                    <input type="number" step="0.01" name="min_absensi_score" value="0" class="block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 text-sm">
                 </div>
-
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Mulai Prakerin</label>
-                    <input type="date" id="input_start_date" name="start_date" required value="{{ old('start_date') }}" onchange="calculateEndDate()" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Mulai</label>
+                    <input type="date" name="start_date" id="input_start_date" onchange="calculateEndDate()" class="block w-full rounded-xl border-gray-300 bg-gray-50 px-4 py-3 text-sm">
                 </div>
-
                 <div>
-                    <label class="block text-sm font-bold text-blue-700 mb-2">Durasi Prakerin (Bulan)</label>
-                    <input type="number" id="input_duration" min="1" max="12" placeholder="Cth: 3" oninput="calculateEndDate()" class="block w-full rounded-xl border-blue-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3 bg-blue-50 focus:bg-white transition font-bold text-blue-900">
+                    <label class="block text-sm font-bold text-blue-700 mb-2">Durasi (Bulan)</label>
+                    <input type="number" id="input_duration" min="1" oninput="calculateEndDate()" class="block w-full rounded-xl border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold">
                 </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-500 mb-2">Tanggal Selesai (Dihitung Otomatis)</label>
-                    <input type="date" id="input_end_date" name="end_date" required readonly value="{{ old('end_date') }}" class="block w-full rounded-xl border-gray-200 shadow-sm text-sm px-4 py-3 bg-gray-100 text-gray-500 cursor-not-allowed font-medium">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-400 mb-2">Tanggal Selesai (Otomatis)</label>
+                    <input type="date" name="end_date" id="input_end_date" readonly class="block w-full rounded-xl border-gray-200 bg-gray-100 px-4 py-3 text-sm cursor-not-allowed">
                 </div>
-
             </div>
-            
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" onclick="document.getElementById('createSlotModal').classList.add('hidden')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition text-sm">Batal</button>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition text-sm">Simpan Kuota</button>
+                <button type="submit" class="bg-indigo-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-indigo-700 transition">Simpan</button>
             </div>
         </form>
     </div>
@@ -231,26 +192,12 @@
 
 <script>
     function calculateEndDate() {
-        const startDateInput = document.getElementById('input_start_date').value;
-        const durationInput = document.getElementById('input_duration').value;
-        const endDateField = document.getElementById('input_end_date');
-
-        if (startDateInput && durationInput) {
-            // Buat objek tanggal dari input
-            let date = new Date(startDateInput);
-            
-            // Tambahkan jumlah bulan sesuai input durasi
-            date.setMonth(date.getMonth() + parseInt(durationInput));
-            
-            // Format kembali ke YYYY-MM-DD agar bisa masuk ke input type="date"
-            let year = date.getFullYear();
-            let month = String(date.getMonth() + 1).padStart(2, '0');
-            let day = String(date.getDate()).padStart(2, '0');
-            
-            endDateField.value = `${year}-${month}-${day}`;
-        } else {
-            // Kosongkan jika salah satu parameter belum diisi
-            endDateField.value = '';
+        const start = document.getElementById('input_start_date').value;
+        const duration = document.getElementById('input_duration').value;
+        if(start && duration) {
+            let date = new Date(start);
+            date.setMonth(date.getMonth() + parseInt(duration));
+            document.getElementById('input_end_date').value = date.toISOString().split('T')[0];
         }
     }
 </script>
