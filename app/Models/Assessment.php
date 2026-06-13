@@ -1,17 +1,16 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Assessment extends Model
 {
-    protected $fillable = [
-        'student_id', 'absensi', 'fisik_mental', 'keaktifan', 'catatan_kasus', 'administrasi', 'academic_year_id'
+    protected $fillable = ['student_id', 'scores_data'];
+
+    protected $casts = [
+        'scores_data' => 'array', // Otomatis mengurai JSON menjadi Array PHP
     ];
 
-    public function student(): BelongsTo
+    public function student()
     {
         return $this->belongsTo(Student::class);
     }

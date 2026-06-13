@@ -8,10 +8,17 @@
 </head>
 <body class="antialiased bg-gray-50 text-gray-800">
     <nav class="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
-        <div class="font-bold text-xl text-indigo-700 flex items-center gap-2">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            {{ $setting->nama_sekolah ?? 'Sistem SPK Prakerin' }}
+        <div class="font-bold text-xl text-indigo-700 flex items-center gap-3">
+            @if(!empty($setting->logo_path))
+                <img src="{{ asset('storage/' . $setting->logo_path) }}" alt="Logo {{ $setting->nama_sekolah }}" class="h-10 w-auto object-contain">
+            @else
+                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+            @endif
+            <span class="tracking-tight">{{ $setting->nama_sekolah ?? 'Sistem SPK Prakerin' }}</span>
         </div>
+        
         <div>
             @auth
                 <a href="{{ url('/dashboard') }}" class="font-semibold text-gray-600 hover:text-indigo-600 px-4">Dashboard</a>

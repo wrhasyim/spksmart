@@ -2,82 +2,82 @@
 
 namespace App\Exports;
 
+use App\Models\Criterion;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SampleStudentsExport implements FromArray, WithHeadings, WithStyles
+class SampleStudentsExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths
 {
-    /**
-     * Contoh data tiruan (Sample) sebagai panduan pengisian
-     */
-    public function array(): array
+    protected $criteria;
+
+    public function __construct()
     {
-        return [
-            [
-                '1234567890',          // nisn
-                'Ahmad Fauzi',          // nama
-                'XII TKJ 1',            // kelas
-                'L',                    // jenis_kelamin
-                'TKJ',                  // kode_jurusan
-                '95',                   // nilai_absensi
-                '88',                   // nilai_fisik
-                '90',                   // nilai_keaktifan
-                '0',                    // nilai_kasus (Cost, semakin kecil semakin baik)
-                '100'                   // nilai_administrasi
-            ],
-            [
-                '0987654321',          // nisn
-                'Siti Aminah',          // nama
-                'XII RPL 2',            // kelas
-                'P',                    // jenis_kelamin
-                'RPL',                  // kode_jurusan
-                '90',                   // nilai_absensi
-                '85',                   // nilai_fisik
-                '92',                   // nilai_keaktifan
-                '5',                    // nilai_kasus
-                '95'                    // nilai_administrasi
-            ]
-        ];
+        // Ambil semua kriteria yang aktif (tidak kena soft delete)
+        $this->criteria = Criterion::all();
     }
 
-    /**
-     * Header kolom baris pertama (Harus huruf kecil semua & snake_case)
-     */
     public function headings(): array
     {
+        // Kolom Statis (Biodata Siswa)
+        $headings = [
+            'NISN',
+            'Nama Lengkap',
+            'Kelas',
+            'Kode Jurusan',
+            'L/P',
+            'No WA Ortu'
+        ];
+
+        // Tambahkan Kolom Kriteria (Dinamis)
+        foreach ($this->criteria as $criterion) {
+            // Misal kriteria absensi, akan jadi header: "Nilai Absensi"
+            $headings[] = 'Nilai ' . $criterion->name; 
+        }
+
+        return $headings;
+    }
+
+    public function array(): array
+    {
+        // Baris Contoh (Dummy Data) agar admin paham cara isinya
+        $exampleRow = [
+            '0061234567',         // NISN
+            'Ahmad Fulan',        // Nama
+            'XII TKJ 1',          // Kelas
+            'TKJ',                // Kode Jurusan (Sangat penting pakai KODE, bukan nama panjang)
+            'L',                  // L/P
+            '081234567890'        // WA Ortu
+        ];
+
+        // Isi nilai contoh (angka 0-100) untuk setiap kriteria dinamis
+        foreach ($this->criteria as $criterion) {
+            $exampleRow[] = '85'; // Contoh nilai
+        }
+
+        return [$exampleRow];
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        // Beri warna tebal pada baris pertama (Header)
         return [
-            'nisn',
-            'nama',
-            'kelas',
-            'jenis_kelamin',
-            'kode_jurusan',
-            'nilai_absensi',
-            'nilai_fisik',
-            'nilai_keaktifan',
-            'nilai_kasus',
-            'nilai_administrasi'
+            1 => ['font' => ['bold' => true]],
         ];
     }
 
-    /**
-     * Memberikan gaya/style warna pada header Excel agar terlihat rapi
-     */
-    public function styles(Worksheet $sheet)
+    public function columnWidths(): array
     {
         return [
-            // Baris 1 (Header) diberi font tebal, teks putih, background indigo
-            1 => [
-                'font' => [
-                    'bold' => true, 
-                    'color' => ['rgb' => 'FFFFFF']
-                ],
-                'fill' => [
-                    'fillType' => 'solid',
-                    'startColor' => ['rgb' => '4F46E5']
-                ]
-            ],
+            'A' => 15, // NISN
+            'B' => 25, // Nama
+            'C' => 15, // Kelas
+            'D' => 15, // Jurusan
+            'E' => 10, // L/P
+            'F' => 18, // WA
+            // Kolom nilai akan menyesuaikan otomatis
         ];
     }
 }

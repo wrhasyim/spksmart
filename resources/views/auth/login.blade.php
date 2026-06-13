@@ -16,14 +16,18 @@
             <div class="absolute -top-32 -right-40 w-96 h-96 rounded-full bg-indigo-400 opacity-20 blur-2xl"></div>
 
             <div class="relative z-10 text-center px-12">
-                <svg class="w-24 h-24 mx-auto mb-6 text-indigo-200 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                </svg>
+                @if(!empty($setting->logo_path))
+                    <img src="{{ asset('storage/' . $setting->logo_path) }}" alt="Logo {{ $setting->nama_sekolah }}" class="h-24 w-auto mx-auto mb-6 object-contain drop-shadow-md">
+                @else
+                    <svg class="w-24 h-24 mx-auto mb-6 text-indigo-200 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                @endif
                 <h1 class="text-4xl font-extrabold text-white tracking-tight mb-4 drop-shadow-md">
-                    Portal SPK Hubin
+                    {{ $setting->nama_sekolah ?? 'Portal SPK Hubin' }}
                 </h1>
                 <p class="text-lg text-indigo-100 max-w-md mx-auto leading-relaxed">
-                    Sistem cerdas pendukung keputusan penempatan Prakerin. Mendistribusikan siswa secara adil, presisi, dan transparan menggunakan perhitungan metode SMART.
+                    Sistem cerdas pendukung keputusan penempatan Prakerin menggunakan perhitungan metode SMART secara presisi dan transparan.
                 </p>
             </div>
         </div>
@@ -33,8 +37,11 @@
             <div class="w-full max-w-md bg-white p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 z-10">
                 
                 <div class="text-center mb-10">
+                    @if(!empty($setting->logo_path))
+                        <img src="{{ asset('storage/' . $setting->logo_path) }}" alt="Logo" class="h-16 w-auto mx-auto mb-4 object-contain lg:hidden">
+                    @endif
                     <h2 class="text-3xl font-bold text-gray-800 tracking-tight mb-2">Selamat Datang 👋</h2>
-                    <p class="text-sm text-gray-500">Silakan masuk menggunakan akun Admin Anda.</p>
+                    <p class="text-sm text-gray-500">Silakan masuk ke Portal SPK {{ $setting->nama_sekolah ?? 'Hubin' }}</p>
                 </div>
 
                 <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -49,7 +56,7 @@
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
                             <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus autocomplete="username" 
-                                class="pl-10 w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-100 transition duration-200 outline-none" placeholder="Masukkan username">
+                                class="pl-10 w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-100 transition duration-200 outline-none" placeholder="Masukkan username admin">
                         </div>
                         <x-input-error :messages="$errors->get('username')" class="mt-2 text-red-500 text-sm font-medium" />
                     </div>

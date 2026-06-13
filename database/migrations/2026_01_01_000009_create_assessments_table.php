@@ -9,11 +9,10 @@ return new class extends Migration {
         Schema::create('assessments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
-            $table->integer('absensi')->nullable();
-            $table->integer('fisik')->nullable();
-            $table->integer('keaktifan')->nullable();
-            $table->integer('kasus')->nullable();
-            $table->integer('administrasi')->nullable();
+            
+            // Kolom JSON dinamis untuk menampung semua nilai (Format: {"absensi": 85, "fisik": 90})
+            $table->json('scores_data'); 
+            
             $table->timestamps();
         });
     }
