@@ -21,22 +21,25 @@ class CompanyController extends Controller
     }
 
     /**
-     * Tampilkan Detail Perusahaan + Manajemen Gelombang Lowongan (Master-Detail)
+     * Tampilkan Detail Perusahaan + Manajemen Gelombang Lowongan
      */
-   public function show(Company $company, Request $request)
+    public function show(Company $company, Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
         $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
         $allYears = AcademicYear::all();
-        $majors = Major::all();
+        $majors = Major::all(); // Mengirim data jurusan untuk modal Buka Kuota Baru
 
+        // Mengambil slot dengan relasi 'majors' (jamak)
         $slots = CompanySlot::where('company_id', $company->id)
             ->where('academic_year_id', $selectedYearId)
-            ->with('majors')
+            ->with('majors') 
             ->get()
             ->map(function ($slot) {
-                // LOGIKA BARU: Hitung siswa HANYA berdasarkan company_slot_id ini
-                $kuotaTerisi = Placement::where('company_slot_id', $slot->id)->count();
+                // Logika hitung kuota berdasarkan penempatan yang sudah final
+                $kuotaTerisi = Placement::where('company_slot_id', $slot->id)
+                                        ->where('status_pencocokan', 'final')
+                                        ->count();
 
                 $slot->kuota_terisi = $kuotaTerisi;
                 $slot->sisa_kuota = max(0, $slot->quota - $kuotaTerisi);
@@ -55,7 +58,7 @@ class CompanyController extends Controller
     }
 
     /**
-     * Simpan data perusahaan baru ke database
+     * Simpan data perusahaan baru
      */
     public function store(Request $request)
     {
@@ -73,7 +76,7 @@ class CompanyController extends Controller
     }
 
     /**
-     * Tampilkan form untuk mengubah data perusahaan
+     * Tampilkan form edit
      */
     public function edit(Company $company)
     {
@@ -81,7 +84,7 @@ class CompanyController extends Controller
     }
 
     /**
-     * Perbarui data perusahaan yang ada di database
+     * Perbarui data perusahaan
      */
     public function update(Request $request, Company $company)
     {
@@ -99,7 +102,7 @@ class CompanyController extends Controller
     }
 
     /**
-     * Hapus data perusahaan dari database
+     * Hapus data perusahaan
      */
     public function destroy(Company $company)
     {

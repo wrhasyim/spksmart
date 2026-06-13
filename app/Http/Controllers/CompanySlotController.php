@@ -3,49 +3,86 @@
 namespace App\Http\Controllers;
 
 use App\Models\CompanySlot;
+use App\Models\AcademicYear;
+use App\Models\Company;
+use App\Models\Major;
 use Illuminate\Http\Request;
 
 class CompanySlotController extends Controller
 {
     /**
-     * Menyimpan Kuota / Gelombang Baru ke Database
+     * Tampilkan daftar slot perusahaan
+     */
+    public function index(Request $request)
+    {
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
+        $allYears = AcademicYear::all();
+
+        $slots = CompanySlot::with(['company', 'majors'])
+            ->where('academic_year_id', $selectedYearId)
+            ->latest()
+            ->get();
+
+        return view('admin.company_slots.index', compact('slots', 'allYears', 'selectedYearId'));
+    }
+
+    /**
+     * Menyimpan Kuota / Gelombang Baru
      */
     public function store(Request $request)
     {
-        // 1. Validasi semua inputan dari form modal
         $validated = $request->validate([
             'company_id'         => 'required|exists:companies,id',
             'academic_year_id'   => 'required|exists:academic_years,id',
-            'major_id'           => 'required|exists:majors,id',
-            'batch_name'         => 'required|string|max:255',
-            'gender_requirement' => 'required|in:L,P,Semua',
-            'quota'              => 'required|integer|min:1',
-            'min_total_score'    => 'required|numeric|min:0',
-            'min_absensi_score'  => 'required|numeric|min:0',
+            'batch_name'         => 'required|string',
+            'quota'              => 'required|integer',
+            'gender_requirement' => 'required',
+            'min_total_score'    => 'required|numeric',
+            'min_absensi_score'  => 'required|numeric',
             'start_date'         => 'required|date',
-            'end_date'           => 'required|date|after_or_equal:start_date',
+            'end_date'           => 'required|date',
+            'major_ids'          => 'required|array',
+            'major_ids.*'        => 'exists:majors,id',
         ]);
 
-        // 2. Logika Efisiensi Kuota (Sesuai Konsep Fleksibel)
-        if ($validated['gender_requirement'] === 'L') {
-            $validated['quota_male']   = $validated['quota'];
-            $validated['quota_female'] = 0;
-            
-        } elseif ($validated['gender_requirement'] === 'P') {
-            $validated['quota_male']   = 0;
-            $validated['quota_female'] = $validated['quota'];
-            
-        } else {
-            // Jika "Semua", kita tidak membedakan gender. 
-            // Mesin SPK akan murni bergantung pada kolom 'quota' utama.
-            $validated['quota_male']   = 0;
-            $validated['quota_female'] = 0;
-        }
+        // Ambil data untuk tabel utama (kecuali major_ids)
+        $data = $request->except(['major_ids', '_token']);
 
-        // 3. Simpan ke database
-        CompanySlot::create($validated);
+        // Simpan ke tabel company_slots
+        $slot = CompanySlot::create($data);
 
-        return back()->with('success', 'Gelombang/Kuota berhasil dibuka! Sistem siap memproses seleksi.');
+        // Sync ke tabel pivot company_slot_major
+        $slot->majors()->sync($request->major_ids);
+
+        return redirect()->back()->with('success', 'Kuota berhasil dibuka!');
+    }
+
+    /**
+     * Memperbarui Kuota
+     */
+    public function update(Request $request, CompanySlot $companySlot)
+    {
+        $validated = $request->validate([
+            'batch_name'         => 'required|string',
+            'quota'              => 'required|integer',
+            'gender_requirement' => 'required',
+            'min_total_score'    => 'required|numeric',
+            'min_absensi_score'  => 'required|numeric',
+            'start_date'         => 'required|date',
+            'end_date'           => 'required|date',
+            'major_ids'          => 'required|array',
+            'major_ids.*'        => 'exists:majors,id',
+        ]);
+
+        $data = $request->except(['major_ids', '_token', '_method']);
+        
+        $companySlot->update($data);
+        
+        // Update tabel pivot
+        $companySlot->majors()->sync($request->major_ids);
+
+        return redirect()->back()->with('success', 'Data kuota diperbarui.');
     }
 
     /**
@@ -53,6 +90,8 @@ class CompanySlotController extends Controller
      */
     public function destroy(CompanySlot $company_slot)
     {
+        // Menghapus data juga akan melepas relasi di tabel pivot otomatis 
+        // jika migrasi diatur onDelete('cascade')
         $company_slot->delete();
         
         return back()->with('success', 'Alokasi kuota tersebut berhasil dihapus.');
