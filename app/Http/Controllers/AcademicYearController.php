@@ -12,7 +12,7 @@ class AcademicYearController extends Controller
      */
     public function index()
     {
-        $academicYears = AcademicYear::all();
+        $academicYears = AcademicYear::orderBy('name', 'desc')->get();
         return view('admin.academic_years.index', compact('academicYears'));
     }
 
@@ -31,34 +31,38 @@ class AcademicYearController extends Controller
             'is_active' => false,
         ]);
 
-        return redirect()->route('admin.academic-years.index')->with('success', 'Tahun ajaran berhasil ditambahkan.');
+        // PERBAIKAN: Menggunakan garis bawah (underscore) sesuai routes/web.php
+        return redirect()->route('admin.academic_years.index')->with('success', 'Tahun ajaran berhasil ditambahkan.');
     }
 
     /**
      * Jadikan tahun ajaran terpilih sebagai periode aktif
      */
-    public function setActive(AcademicYear $academicYear)
+    public function setActive(AcademicYear $academic_year)
     {
         // Nonaktifkan semua tahun ajaran terlebih dahulu
         AcademicYear::query()->update(['is_active' => false]);
 
         // Aktifkan tahun ajaran yang dipilih
-        $academicYear->update(['is_active' => true]);
+        $academic_year->update(['is_active' => true]);
 
-        return redirect()->route('admin.academic-years.index')->with('success', 'Tahun ajaran berhasil diaktifkan sebagai periode saat ini.');
+        // PERBAIKAN: Menggunakan garis bawah (underscore) sesuai routes/web.php
+        return redirect()->route('admin.academic_years.index')->with('success', "Tahun ajaran {$academic_year->name} berhasil diaktifkan sebagai periode saat ini.");
     }
 
     /**
      * Hapus tahun ajaran
      */
-    public function destroy(AcademicYear $academicYear)
+    public function destroy(AcademicYear $academic_year)
     {
         // Mencegah penghapusan periode yang sedang aktif untuk menjaga integritas data
-        if ($academicYear->is_active) {
+        if ($academic_year->is_active) {
             return back()->with('error', 'Tidak dapat menghapus tahun ajaran yang sedang aktif.');
         }
 
-        $academicYear->delete();
-        return redirect()->route('admin.academic-years.index')->with('success', 'Tahun ajaran berhasil dihapus.');
+        $academic_year->delete();
+        
+        // PERBAIKAN: Menggunakan garis bawah (underscore) sesuai routes/web.php
+        return redirect()->route('admin.academic_years.index')->with('success', 'Tahun ajaran berhasil dihapus.');
     }
 }

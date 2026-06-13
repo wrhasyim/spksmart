@@ -1,69 +1,94 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Master Data Jurusan') }}
-            </h2>
-            <a href="{{ route('admin.majors.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
-                + Tambah Jurusan
-            </a>
+@extends('layouts.hubin')
+
+@section('title', 'Master Jurusan')
+
+@section('content')
+<div class="max-w-7xl mx-auto space-y-8">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center border-b border-gray-100 pb-4 gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-gray-900">🗂️ Kompetensi Keahlian (Jurusan)</h1>
+            <p class="text-sm text-gray-500 mt-1">Daftar program keahlian aktif untuk pemetaan kuota slot industri.</p>
         </div>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            
-            @if (session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if (session('error'))
-                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 border-b-2 border-gray-200">
-                                <th class="p-3 font-semibold text-gray-700">No</th>
-                                <th class="p-3 font-semibold text-gray-700">Kode</th>
-                                <th class="p-3 font-semibold text-gray-700">Nama Jurusan</th>
-                                <th class="p-3 font-semibold text-gray-700 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($majors as $index => $major)
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-3">{{ $index + 1 }}</td>
-                                    <td class="p-3 font-bold text-indigo-600">{{ $major->code }}</td>
-                                    <td class="p-3">{{ $major->name }}</td>
-                                    <td class="p-3 text-center space-x-2">
-                                        <a href="{{ route('admin.majors.edit', $major->id) }}" class="text-blue-600 hover:text-blue-800 font-medium">Edit</a>
-                                        
-                                        <form action="{{ route('admin.majors.destroy', $major->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jurusan ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-800 font-medium">Hapus</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="p-6 text-center text-gray-500">
-                                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                        Belum ada data jurusan. Silakan tambahkan.
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div>
+            <button onclick="document.getElementById('createMajorModal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md px-5 py-2.5 rounded-xl font-bold transition flex items-center text-sm gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah Jurusan
+            </button>
         </div>
     </div>
-</x-app-layout>
+
+    @if (session('success'))
+        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <div class="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kode Jurusan</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Kompetensi Keahlian</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    @forelse($majors as $major)
+                    <tr class="hover:bg-indigo-50/30 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold px-3 py-1 rounded-md text-xs tracking-wider">
+                                {{ $major->code }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                            {{ $major->name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <form action="{{ route('admin.majors.destroy', $major->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus jurusan ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-gray-400 hover:text-red-600 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="px-6 py-12 text-center text-gray-500 font-medium">
+                            Belum ada program keahlian siswa.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="createMajorModal" class="hidden fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 class="text-lg font-bold text-gray-900">Tambah Program Keahlian</h3>
+            <button onclick="document.getElementById('createMajorModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+        </div>
+        <form action="{{ route('admin.majors.store') }}" method="POST" class="p-6 space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Kode Singkatan Jurusan</label>
+                <input type="text" name="code" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: RPL / TKJ">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Nama Lengkap Jurusan</label>
+                <input type="text" name="name" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: Rekayasa Perangkat Lunak">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('createMajorModal').classList.add('hidden')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition text-sm">Batal</button>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

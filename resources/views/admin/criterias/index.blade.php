@@ -1,86 +1,110 @@
 @extends('layouts.hubin')
 
-@section('title', 'Master Data Kriteria')
+@section('title', 'Kriteria SMART')
 
 @section('content')
-<div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-    <h2 class="font-bold text-2xl text-gray-800 leading-tight tracking-tight">
-        Master Data Kriteria
-    </h2>
-    <a href="{{ route('admin.criterias.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition duration-200 shadow-md shadow-indigo-600/20 text-sm flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-        Tambah Kriteria
-    </a>
-</div>
+<div class="max-w-7xl mx-auto space-y-8">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center border-b border-gray-100 pb-4 gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-gray-900">🎯 Parameter Kriteria SMART</h1>
+            <p class="text-sm text-gray-500 mt-1">Kelola bobot kepentingan dan sifat kriteria untuk kalkulasi otomatis sistem.</p>
+        </div>
+        <div>
+            <button onclick="document.getElementById('createCriteriaModal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md px-5 py-2.5 rounded-xl font-bold transition flex items-center text-sm gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah Kriteria
+            </button>
+        </div>
+    </div>
 
-@if (session('success'))
-    <div class="mb-6 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-xl shadow-sm flex items-center gap-3 text-emerald-800 font-medium">
-        ✅ {{ session('success') }}
-    </div>
-@endif
-@if (session('error'))
-    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm flex items-center gap-3 text-red-800 font-medium">
-        ❌ {{ session('error') }}
-    </div>
-@endif
+    @if (session('success'))
+        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            {{ session('success') }}
+        </div>
+    @endif
 
-<div class="mb-6 bg-blue-50 border border-blue-100 p-5 rounded-2xl flex items-center justify-between shadow-sm">
-    <div>
-        <h3 class="text-blue-800 font-bold text-lg">Total Bobot Kriteria Saat Ini</h3>
-        <p class="text-blue-600 text-sm">Pastikan total bobot bernilai pas 100 untuk hasil SPK SMART yang valid.</p>
-    </div>
-    <div class="text-3xl font-extrabold {{ $criterias->sum('weight') == 100 ? 'text-green-600' : 'text-red-600' }}">
-        {{ $criterias->sum('weight') }}
-    </div>
-</div>
-
-<div class="bg-white overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-3xl border border-gray-100">
-    <div class="p-8 overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-gray-50/80 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    <th class="p-4 rounded-tl-xl">Kode</th>
-                    <th class="p-4">Nama Kriteria</th>
-                    <th class="p-4">Tipe (Atribut)</th>
-                    <th class="p-4">Bobot (%)</th>
-                    <th class="p-4 text-center rounded-tr-xl">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="text-sm text-gray-700">
-                @forelse ($criterias as $criterion)
-                    <tr class="border-b border-gray-50 hover:bg-indigo-50/30 transition duration-150">
-                        <td class="p-4 font-bold text-indigo-600">{{ $criterion->code }}</td>
-                        <td class="p-4 font-medium text-gray-900">{{ $criterion->name }}</td>
-                        <td class="p-4">
-                            @if($criterion->type === 'benefit')
-                                <span class="bg-emerald-100 text-emerald-800 py-1 px-3 rounded-full text-xs font-bold inline-flex items-center gap-1">
-                                    <span>+</span> Benefit
-                                </span>
+    <div class="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Kriteria</th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Sifat / Tipe</th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Bobot Statis (W)</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    @forelse($criterias as $criteria)
+                    <tr class="hover:bg-indigo-50/30 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                            {{ $criteria->name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            @if(strtolower($criteria->type) === 'benefit')
+                                <span class="bg-green-100 border border-green-200 text-green-800 px-3 py-1 rounded-md text-xs font-bold">Benefit</span>
                             @else
-                                <span class="bg-rose-100 text-rose-800 py-1 px-3 rounded-full text-xs font-bold inline-flex items-center gap-1">
-                                    <span>-</span> Cost
-                                </span>
+                                <span class="bg-red-100 border border-red-200 text-red-800 px-3 py-1 rounded-md text-xs font-bold">Cost</span>
                             @endif
                         </td>
-                        <td class="p-4 font-bold text-gray-800">{{ $criterion->weight }}</td>
-                        <td class="p-4 text-center space-x-3">
-                            <a href="{{ route('admin.criterias.edit', $criterion->id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold transition">Edit</a>
-                            <form action="{{ route('admin.criterias.destroy', $criterion->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus kriteria ini? (Data nilai siswa untuk kriteria ini akan diabaikan saat import berikutnya)');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-rose-500 hover:text-rose-800 font-semibold transition">Hapus</button>
-                            </form>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-extrabold text-indigo-600">
+                            {{ $criteria->weight }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end items-center space-x-3">
+                                <form action="{{ route('admin.criterias.destroy', $criteria->id) }}" method="POST" onsubmit="return confirm('Menghapus kriteria akan berdampak pada kolom nilai siswa! Lanjutkan?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-gray-400 hover:text-red-600 transition">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
-                @empty
+                    @empty
                     <tr>
-                        <td colspan="5" class="p-8 text-center text-gray-500 bg-gray-50/50 rounded-b-xl">
-                            Belum ada data kriteria. Silakan tambahkan.
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-500 font-medium">
+                            Belum ada parameter kriteria yang dibuat.
                         </td>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="createCriteriaModal" class="hidden fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 class="text-lg font-bold text-gray-900">Tambah Parameter Baru</h3>
+            <button onclick="document.getElementById('createCriteriaModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+        </div>
+        <form action="{{ route('admin.criterias.store') }}" method="POST" class="p-6 space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Nama Kriteria</label>
+                <input type="text" name="name" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: Nilai Keaktifan">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Sifat Kriteria</label>
+                <select name="type" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                    <option value="benefit">Benefit (Makin tinggi makin baik)</option>
+                    <option value="cost">Cost (Makin rendah makin baik - Cth: Jarak/Absen)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Bobot Nilai (Angka)</label>
+                <input type="number" name="weight" required min="1" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: 25">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('createCriteriaModal').classList.add('hidden')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition text-sm">Batal</button>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition text-sm">Simpan</button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection
