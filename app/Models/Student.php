@@ -3,40 +3,41 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'nisn', 
         'name', 
-        'class', 
-        'final_score',
-        'gender', 
+        'class_name', 
         'major_id', 
-        'academic_year_id', 
-        'status'
+        'gender', 
+        'parent_phone', 
+        'status', 
+        'final_score', 
+        'academic_year_id'
     ];
 
-    public function major(): BelongsTo
+    public function major()
     {
         return $this->belongsTo(Major::class);
     }
 
-    public function academicYear(): BelongsTo
+    public function academicYear()
     {
         return $this->belongsTo(AcademicYear::class);
     }
 
-    // PASTIKAN BLOK INI ADA
-    public function assessment(): HasOne
+    public function assessment()
     {
         return $this->hasOne(Assessment::class);
     }
 
-    public function placement(): HasOne
+    public function placements()
     {
-        return $this->hasOne(Placement::class);
+        return $this->hasMany(Placement::class);
     }
 }

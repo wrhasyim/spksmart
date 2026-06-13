@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Criterion extends Model
 {
-    // Tambahkan baris ini agar model membaca tabel 'criterias' yang dibuat migrasi
-    protected $table = 'criterias'; 
+    use SoftDeletes;
 
-    protected $fillable = ['code', 'name', 'weight', 'type'];
+    protected $fillable = [
+        'code',
+        'name',
+        'weight',
+        'type' // Enum: 'benefit' atau 'cost'
+    ];
 }

@@ -3,30 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Company extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
-        'name', 'address', 'quota', 'major_id', 'gender_requirement',
-        'min_total_score', 'min_absensi_score', 'min_fisik_score', 
-        'min_keaktifan_score', 'min_administrasi_score', 'academic_year_id'
+        'name',
+        'address',
+        'phone'
     ];
-public function slots()
-{
-    return $this->hasMany(CompanySlot::class);
-}
-    public function major(): BelongsTo
+
+    // Relasi: Satu perusahaan bisa memiliki banyak slot gelombang
+    public function slots()
     {
-        return $this->belongsTo(Major::class);
+        return $this->hasMany(CompanySlot::class);
     }
 
-    public function academicYear(): BelongsTo
-    {
-        return $this->belongsTo(AcademicYear::class);
-    }
+    // Relasi: Satu perusahaan bisa memiliki banyak penempatan siswa
     public function placements()
-{
-    return $this->hasMany(Placement::class);
-}
+    {
+        return $this->hasMany(Placement::class);
+    }
 }
