@@ -4,48 +4,48 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AppSetting;
 
 class AuthController extends Controller
 {
-    /**
-     * Tampilkan halaman form login
-     */
     public function showLogin()
     {
-        return view('auth.login');
+        $setting = AppSetting::first();
+        return view('auth.login', compact('setting'));
     }
 
-    /**
-     * Proses autentikasi login
-     */
     public function login(Request $request)
     {
+        // 1. Validasi Input Menggunakan Username
         $credentials = $request->validate([
-            'username' => ['required'], // Menggunakan username
-            'password' => ['required'],
+            'username' => ['required', 'string'],
+            'password' => ['required', 'string'],
         ]);
 
-        // Auth::attempt akan mencocokkan field username dan password secara otomatis
-        if (Auth::attempt($credentials)) {
+        // 2. Tangkap status tombol "Ingat Saya" (Checkbox)
+        $remember = $request->boolean('remember');
+
+        // 3. Lempar variabel $remember ke parameter kedua Auth::attempt()
+        if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return redirect()->intended('dashboard'); 
+            
+            // Mengambil nama asli admin untuk sapaan di dashboard
+            $adminName = Auth::user()->name; 
+
+            return redirect()->intended('dashboard')
+                ->with('login_success', "Selamat Datang di Portal SPK Hubin, {$adminName}!");
         }
 
         return back()->withErrors([
-            'username' => 'Kombinasi username dan password tidak sesuai atau Anda tidak memiliki akses.',
+            'username' => 'Username atau password yang Anda masukkan salah.',
         ])->onlyInput('username');
     }
 
-    /**
-     * Proses logout sistem
-     */
     public function logout(Request $request)
     {
         Auth::logout();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        return redirect('/');
+        return redirect()->route('welcome');
     }
 }

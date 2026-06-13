@@ -3,95 +3,99 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
-use App\Models\AcademicYear;
 use App\Models\Major;
-use App\Imports\StudentsImport;
-use App\Exports\SampleStudentsExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
+// use Maatwebsite\Excel\Facades\Excel;
+// use App\Imports\StudentsImport;
 
 class StudentController extends Controller
 {
-    /**
-     * Tampilkan halaman utama daftar siswa
-     */
-    public function index(Request $request)
+    public function index()
     {
-        $activeYear = AcademicYear::where('is_active', true)->first();
-        $selectedYearId = $request->get('academic_year_id', $activeYear ? $activeYear->id : null);
-        $allYears = AcademicYear::all();
-
-        $students = Student::where('academic_year_id', $selectedYearId)
-            ->with(['major', 'assessment'])
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('admin.students.index', compact('students', 'allYears', 'selectedYearId', 'activeYear'));
+        // Ambil data siswa beserta relasi jurusan dan tahun ajaran (Eager Loading agar cepat)
+        $students = Student::with(['major', 'academicYear'])->latest()->get();
+        return view('admin.students.index', compact('students'));
     }
 
-    /**
-     * Form tambah siswa manual
-     */
     public function create()
     {
         $majors = Major::all();
         $academicYears = AcademicYear::all();
+        
+        // Peringatan jika master data belum lengkap
+        if ($majors->isEmpty() || $academicYears->isEmpty()) {
+            return redirect()->route('admin.students.index')->with('error', 'Harap isi Master Jurusan dan Tahun Ajaran terlebih dahulu sebelum menambah siswa.');
+        }
+
         return view('admin.students.create', compact('majors', 'academicYears'));
     }
 
-    /**
-     * Simpan tambah siswa manual
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'nisn' => 'required|string|unique:students,nisn',
             'name' => 'required|string|max:255',
-            'class' => 'required|string',
-            'gender' => 'required|in:L,P',
+            'class_name' => 'nullable|string|max:50',
             'major_id' => 'required|exists:majors,id',
+            'gender' => 'required|in:L,P',
+            'parent_phone' => 'nullable|string|max:20',
             'academic_year_id' => 'required|exists:academic_years,id',
         ]);
 
-        $validated['status'] = 'belum_prakerin';
+        Student::create($request->all());
 
-        Student::create($validated);
-
-        return redirect()->route('admin.students.index')->with('success', 'Data siswa berhasil ditambahkan secara manual.');
+        return redirect()->route('admin.students.index')->with('success', 'Data Siswa berhasil ditambahkan secara manual.');
     }
 
-    /**
-     * Hapus data siswa
-     */
+    public function edit(Student $student)
+    {
+        $majors = Major::all();
+        $academicYears = AcademicYear::all();
+        return view('admin.students.edit', compact('student', 'majors', 'academicYears'));
+    }
+
+    public function update(Request $request, Student $student)
+    {
+        $request->validate([
+            'nisn' => 'required|string|unique:students,nisn,' . $student->id,
+            'name' => 'required|string|max:255',
+            'class_name' => 'nullable|string|max:50',
+            'major_id' => 'required|exists:majors,id',
+            'gender' => 'required|in:L,P',
+            'parent_phone' => 'nullable|string|max:20',
+            'academic_year_id' => 'required|exists:academic_years,id',
+        ]);
+
+        $student->update($request->all());
+
+        return redirect()->route('admin.students.index')->with('success', 'Data Siswa berhasil diperbarui.');
+    }
+
     public function destroy(Student $student)
     {
+        // Soft delete siswa
         $student->delete();
-        return redirect()->route('admin.students.index')->with('success', 'Data siswa berhasil dihapus.');
+        return redirect()->route('admin.students.index')->with('success', 'Data Siswa berhasil dihapus (Soft Delete).');
     }
 
-    /**
-     * FITUR: Import Data Siswa dan Nilai dari Excel
-     */
+    // ==========================================
+    // KERANGKA FITUR IMPORT EXCEL DINAMIS
+    // ==========================================
+    
+    public function downloadSample()
+    {
+        // Nanti kita isi dengan logika pembuatan Template Dinamis
+        return back()->with('info', 'Fitur Download Template Excel akan segera diaktifkan.');
+    }
+
     public function import(Request $request)
     {
         $request->validate([
-            'file_excel' => 'required|mimes:xlsx,xls,csv|max:5120',
+            'file_excel' => 'required|mimes:xlsx,xls|max:5120', // Maks 5MB
         ]);
 
-        try {
-            Excel::import(new StudentsImport, $request->file('file_excel'));
-            return redirect()->route('admin.students.index')->with('success', 'Data Siswa dan Nilai berhasil diimpor ke sistem!');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengimpor data. Pastikan format kolom sesuai. Error: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * FITUR: Download Contoh File Excel Template (.xlsx)
-     */
-    public function downloadSample()
-    {
-        return Excel::download(new SampleStudentsExport, 'template_sample_import_siswa.xlsx');
+        // Nanti kita isi dengan logika Import Laravel Excel
+        return back()->with('info', 'Fitur Import Excel akan segera diaktifkan.');
     }
 }

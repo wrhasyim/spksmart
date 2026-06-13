@@ -11,12 +11,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Akun Super Admin Hubin (Menggunakan Username, bukan Email)
+        // 1. Akun Super Admin Hubin (Password wajib di-hash agar bisa dibaca Auth::attempt)
         User::updateOrCreate(
             ['username' => 'adminhubin'],
             [
                 'name' => 'Kepala Hubin SMK',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('password123'), // <--- Pastikan ada Hash::make()
             ]
         );
 

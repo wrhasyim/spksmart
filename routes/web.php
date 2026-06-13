@@ -1,92 +1,125 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Models\AppSetting;
+use App\Models\Student;
+
+// Import Controllers
 use App\Http\Controllers\SpkController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanySlotController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AssessmentController;
-use App\Http\Controllers\CompanySlotController;
 use App\Http\Controllers\CriterionController;
+use App\Http\Controllers\MajorController; // BARU: Untuk Master Jurusan
+use App\Http\Controllers\SettingController; // BARU: Untuk Kop Surat & Konfigurasi
 
-// Halaman utama publik
+// ==========================================
+// 1. HALAMAN PUBLIK & TRACKER NISN
+// ==========================================
 Route::get('/', function () {
-    return view('welcome');
+    $setting = AppSetting::first();
+    return view('welcome', compact('setting'));
+})->name('welcome');
+
+Route::post('/track-nisn', function (Request $request) {
+    $request->validate(['nisn' => 'required|string']);
+    
+    // Cari siswa beserta penempatan finalnya
+    $student = Student::with(['placements' => function($q) {
+        $q->where('status_pencocokan', 'final')->with('company');
+    }])->where('nisn', $request->nisn)->first();
+
+    if (!$student) {
+        return back()->with('tracker_error', 'NISN tidak ditemukan dalam sistem kami.');
+    }
+
+    if ($student->status === 'lolos_prakerin' && $student->placements->isNotEmpty()) {
+        $companyName = $student->placements->first()->company->name ?? 'Perusahaan Mitra';
+        return back()->with('tracker_success', "Selamat! {$student->name} dinyatakan LOLOS Prakerin di {$companyName}. Silakan hubungi Hubin.");
+    }
+
+    return back()->with('tracker_info', "Halo {$student->name}, status penempatan Anda saat ini: Masih dalam proses seleksi / Belum final.");
+})->name('track.nisn');
+
+
+// ==========================================
+// 2. AUTENTIKASI (LOGIN/LOGOUT USERNAME)
+// ==========================================
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
 });
 
-// Rute Autentikasi (Login/Logout menggunakan Username)
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Rute yang diamankan (Wajib Login Hubin)
+
+// ==========================================
+// 3. RUTE ADMIN HUBIN (WAJIB LOGIN)
+// ==========================================
 Route::middleware(['auth'])->group(function () {
     
-    // Dashboard utama penempatan SPK
+    // ------------------------------------------
+    // DASHBOARD & MESIN SPK
+    // ------------------------------------------
     Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
     Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
+    Route::get('/admin/spk/history', [SpkController::class, 'history'])->name('admin.spk.history');
     
-    // Rute Cetak PDF & Surat
+    // Intervensi Manual (Manual Override)
+    Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
+    Route::put('/placements/{placement}', [SpkController::class, 'update'])->name('admin.placements.update');
+
+    // ------------------------------------------
+    // DOKUMEN & EXPORT (RIWAYAT)
+    // ------------------------------------------
     Route::get('/spk/print-pdf', [SpkController::class, 'printPdf'])->name('admin.spk.print');
     Route::get('/spk/placement/{placement}/letter', [SpkController::class, 'printLetter'])->name('admin.spk.letter');
-    
-    // Rute untuk Manajemen Slot/Gelombang Perusahaan
-    Route::resource('company_slots', CompanySlotController::class)->names('admin.company_slots');
+    Route::get('/spk/export-excel', [SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
 
-    // Manajemen Profil
+    // ------------------------------------------
+    // MANAJEMEN MASTER DATA (CRUD)
+    // ------------------------------------------
+    // Master Jurusan (Baru)
+    Route::resource('majors', MajorController::class)->names('admin.majors');
+    
+    // Master Perusahaan & Slot/Gelombang
+    Route::resource('companies', CompanyController::class)->names('admin.companies');
+    Route::resource('company_slots', CompanySlotController::class)->names('admin.company_slots');
+    
+    // Master Kriteria SMART
+    Route::resource('criterias', CriterionController::class)->names('admin.criterias');
+    
+    // Master Tahun Ajaran
+    Route::resource('academic-years', AcademicYearController::class)
+        ->only(['index', 'store', 'destroy'])
+        ->names('admin.academic-years');
+    Route::post('/academic-years/{academic_year}/set-active', [AcademicYearController::class, 'setActive'])->name('admin.academic-years.set-active');
+
+    // Master Siswa & Import
+    Route::get('/students/sample-excel', [StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
+    Route::post('/students/import', [StudentController::class, 'import'])->name('admin.students.import');
+    Route::resource('students', StudentController::class)->names('admin.students'); // Mencakup Edit Biodata & WA Ortu
+
+    // Input Nilai / Assessment
+    Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
+    Route::put('/students/{student}/assessment', [AssessmentController::class, 'update'])->name('admin.students.assessment.update');
+
+    // ------------------------------------------
+    // PROFIL & PENGATURAN SISTEM
+    // ------------------------------------------
+    // Profil Admin
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Manajemen Perusahaan Mitra Industri
-    Route::get('/companies', [CompanyController::class, 'index'])->name('admin.companies.index');
-    Route::get('/companies/create', [CompanyController::class, 'create'])->name('admin.companies.create');
-    Route::post('/companies', [CompanyController::class, 'store'])->name('admin.companies.store');
-    Route::get('/companies/{company}/edit', [CompanyController::class, 'edit'])->name('admin.companies.edit');
-    Route::put('/companies/{company}', [CompanyController::class, 'update'])->name('admin.companies.update');
-    Route::delete('/companies/{company}', [CompanyController::class, 'destroy'])->name('admin.companies.destroy');
-    Route::get('/companies/{company}', [CompanyController::class, 'show'])->name('admin.companies.show');
-
-    // Manajemen Tahun Ajaran
-    Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('admin.academic-years.index');
-    Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('admin.academic-years.store');
-    Route::post('/academic-years/{academic_year}/set-active', [AcademicYearController::class, 'setActive'])->name('admin.academic-years.set-active');
-    Route::delete('/academic-years/{academic_year}', [AcademicYearController::class, 'destroy'])->name('admin.academic-years.destroy');
-
-    // Manajemen Siswa
-    Route::get('/students', [StudentController::class, 'index'])->name('admin.students.index');
-    Route::get('/students/create', [StudentController::class, 'create'])->name('admin.students.create');
-    Route::post('/students', [StudentController::class, 'store'])->name('admin.students.store');
-    Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
-    
-    // Rute Template & Import Excel Siswa
-    Route::get('/students/sample-excel', [StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
-    Route::post('/students/import', [StudentController::class, 'import'])->name('admin.students.import');
-
-    // Input Nilai / Assessment Kriteria SMART
-    Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
-    Route::put('/students/{student}/assessment', [AssessmentController::class, 'update'])->name('admin.students.assessment.update');
-
-    // Rute Penyesuaian Manual (Manual Override) Penempatan
-    Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
-    Route::put('/placements/{placement}', [SpkController::class, 'update'])->name('admin.placements.update');
-
-    // Ekspor Excel Rekapitulasi
-    Route::get('spk/export-excel', [SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
-
-    // Manajemen Kriteria / Pembobotan (Full CRUD Resources)
-Route::resource('criterias', App\Http\Controllers\CriterionController::class)->names([
-    'index'   => 'admin.criterias.index',
-    'create'  => 'admin.criterias.create',
-    'store'   => 'admin.criterias.store',
-    'edit'    => 'admin.criterias.edit',
-    'update'  => 'admin.criterias.update',
-    'destroy' => 'admin.criterias.destroy',
-]);
-// Pastikan diarahkan ke PlacementController
-Route::get('/admin/spk/history', [App\Http\Controllers\SpkController::class, 'history'])->name('admin.spk.history');
+    // Pengaturan Aplikasi / Kop Surat (Baru)
+    Route::get('/settings', [SettingController::class, 'edit'])->name('admin.settings.edit');
+    Route::put('/settings', [SettingController::class, 'update'])->name('admin.settings.update');
 
 });
 
