@@ -34,7 +34,7 @@ class SmartEngineService
         $criterias = Criterion::all(); 
         $score = 0;
 
-        // Ambil data JSON array (pastikan di Model Assessment, scores_data sudah di-cast ke 'array')
+        // Ambil data JSON array
         $scoresData = $assessment->scores_data ?? [];
 
         foreach ($criterias as $crit) {
@@ -56,15 +56,42 @@ class SmartEngineService
         return round($score * 100, 2);
     }
 
+    // Mengambil nilai Absensi secara spesifik dari JSON
+    // (Asumsi: Anda harus memastikan nama/kata 'absen' ada di Kriteria Absensi)
+    private function getAbsensiScore($assessment): float
+    {
+        $scoresData = $assessment->scores_data ?? [];
+        
+        // Cari ID kriteria yang mengandung kata 'absen' atau 'kehadiran'
+        $absensiCriterion = Criterion::where('name', 'like', '%absen%')
+                                     ->orWhere('name', 'like', '%hadir%')
+                                     ->first();
+
+        if ($absensiCriterion) {
+            return (float) ($scoresData[$absensiCriterion->id] ?? 0);
+        }
+
+        return 0; // Jika tidak ditemukan, default 0
+    }
+
     // Proses Utama Pencocokan (Matchmaking)
     public function runMatchmaking($academicYearId)
     {
         DB::beginTransaction();
         try {
             // 1. CLEANUP (Hapus history pencocokan sistem yang lama/gagal)
+            // Hanya hapus yang by SYSTEM, biarkan MANUAL_OVERRIDE tetap ada
             Placement::where('academic_year_id', $academicYearId)
-                     ->whereNull('company_id') 
+                     ->where('placement_method', 'SYSTEM')
                      ->delete();
+
+            // Kembalikan status siswa yang sebelumnya lulus karena sistem, menjadi belum diproses
+            Student::where('academic_year_id', $academicYearId)
+                   ->whereDoesntHave('placement', function($query) {
+                       // Siswa yang tidak punya penempatan manual
+                       $query->where('placement_method', 'MANUAL_OVERRIDE');
+                   })
+                   ->update(['status' => 'belum_diproses']); // Reset status
 
             // Ambil siswa yang BELUM Lolos (Bypass siswa yang sudah di-lock manual)
             $students = Student::where('academic_year_id', $academicYearId)
@@ -72,23 +99,28 @@ class SmartEngineService
                 ->with(['assessment', 'major'])
                 ->get();
 
-            // Load Slot & Relasi Banyak Jurusan (Many to Many)
-            $companySlots = CompanySlot::where('academic_year_id', $academicYearId)->with('majors')->get();
+            // Load Slot yang aktif pada periode tersebut
+            $companySlots = CompanySlot::where('academic_year_id', $academicYearId)->get();
+            
+            // Hitung ketersediaan kuota aktual per slot
             foreach ($companySlots as $slot) {
                 $used = Placement::where('company_slot_id', $slot->id)->count();
                 $slot->available_quota = max(0, $slot->quota - $used);
             }
 
-            // Hitung Skor
+            // Hitung Skor Total SMART & Ekstrak Nilai Absensi
             foreach ($students as $student) {
                 if (!$student->assessment) {
                     $student->final_score = 0;
+                    $student->absensi_score = 0;
                     continue; 
                 }
+                
                 $student->final_score = $this->calculateScore($student->assessment);
+                $student->absensi_score = $this->getAbsensiScore($student->assessment);
             }
 
-            // Urutkan siswa murni dari Skor Tertinggi
+            // Urutkan siswa secara *descending* (Skor Tertinggi lebih dulu diutamakan)
             $students = $students->sortByDesc('final_score');
 
             // 2. PROSES PENEMPATAN
@@ -117,18 +149,35 @@ class SmartEngineService
         }
     }
 
-    // Syarat Lolos ke Perusahaan
+    // Syarat Lolos ke Perusahaan (Logika Filtering yang Lebih Ketat)
     private function tryPlaceStudent($student, $companySlot, $academicYearId): bool
     {
+        // 1. Cek Ketersediaan Kuota
         if ($companySlot->available_quota <= 0) return false;
 
-        // CEK JURUSAN (Many to Many)
-        // Mengecek apakah jurusan siswa ada di dalam daftar jurusan yang diterima slot ini
-        if (!$companySlot->majors->contains('id', $student->major_id)) {
+        // 2. CEK JURUSAN (Sekarang One-to-Many di tabel company_slots)
+        if ($companySlot->major_id !== $student->major_id) {
             return false;
         }
 
-        // Eksekusi Penempatan
+        // 3. CEK PERSYARATAN GENDER
+        if ($companySlot->gender_requirement !== 'Semua') {
+            if ($companySlot->gender_requirement !== $student->gender) {
+                return false;
+            }
+        }
+
+        // 4. CEK MINIMAL SKOR TOTAL SPK
+        if ($student->final_score < $companySlot->min_total_score) {
+            return false;
+        }
+
+        // 5. CEK MINIMAL SKOR ABSENSI
+        if ($student->absensi_score < $companySlot->min_absensi_score) {
+            return false;
+        }
+
+        // Jika semua filter lolos, Eksekusi Penempatan!
         Placement::create([
             'student_id'        => $student->id,
             'company_id'        => $companySlot->company_id, 

@@ -43,28 +43,34 @@
                         </span>
                     </a>
 
-                    <div class="hidden md:flex items-center gap-1">
-                        <a href="{{ route('dashboard') }}" class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                    <div class="hidden xl:flex items-center gap-1">
+                        <a href="{{ route('dashboard') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
                             Dasbor SPK
                         </a>
                         
-                        <a href="{{ route('admin.academic_years.index') }}" class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.academic_years.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                        <a href="{{ route('admin.academic_years.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.academic_years.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
                             Periode
                         </a>
+
+                        <a href="{{ route('admin.majors.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.majors.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                            Jurusan
+                        </a>
+
+                        <a href="{{ route('admin.criterias.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.criterias.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                            Kriteria
+                        </a>
                         
-                        <a href="{{ route('admin.companies.index') }}" class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.companies.*', 'admin.company_slots.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                        <a href="{{ route('admin.companies.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.companies.*', 'admin.company_slots.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
                             Industri Mitra
                         </a>
                         
-                        <a href="{{ route('admin.students.index') }}" class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.students.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                        <a href="{{ route('admin.students.index') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.students.*') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
                             Siswa & Nilai
                         </a>
                         
-                        <a href="{{ route('admin.spk.history') }}" class="px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.spk.history') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
+                        <a href="{{ route('admin.spk.history') }}" class="px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 {{ request()->routeIs('admin.spk.history') ? 'bg-indigo-50 text-indigo-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50 hover:text-indigo-600' }}">
                             Riwayat
                         </a>
-                        
-                       
                     </div>
                 </div>
 
@@ -72,7 +78,6 @@
                     <button id="profileDropdownBtn" class="flex items-center gap-3 focus:outline-none hover:bg-indigo-50/70 p-1.5 pr-3 rounded-2xl transition-all border border-transparent hover:border-indigo-100">
                         <div class="text-right hidden lg:block">
                             <div class="text-sm font-extrabold text-gray-900">{{ Auth::user()->name ?? 'Administrator' }}</div>
-                            
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-100 to-blue-50 flex items-center justify-center text-indigo-700 font-black text-lg border border-indigo-200 shadow-sm">
                             {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
@@ -83,7 +88,16 @@
                     <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden transform origin-top-right transition-all">
                         <div class="px-4 py-3 border-b border-gray-100 lg:hidden">
                             <p class="text-sm font-bold text-gray-900">{{ Auth::user()->name ?? 'Administrator' }}</p>
-                       
+                        </div>
+
+                        <div class="xl:hidden border-b border-gray-100 py-1 bg-gray-50/50">
+                             <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Dasbor SPK</a>
+                             <a href="{{ route('admin.academic_years.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Periode</a>
+                             <a href="{{ route('admin.majors.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Jurusan</a>
+                             <a href="{{ route('admin.criterias.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Kriteria SMART</a>
+                             <a href="{{ route('admin.companies.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Industri Mitra</a>
+                             <a href="{{ route('admin.students.index') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Siswa & Nilai</a>
+                             <a href="{{ route('admin.spk.history') }}" class="block px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">Riwayat</a>
                         </div>
                         
                         <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 font-semibold transition">
