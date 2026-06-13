@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Criterion extends Model
 {
     use SoftDeletes;
+protected $table = 'criteria';
 
     protected $fillable = [
         'code',

@@ -13,6 +13,8 @@ class CriterionController extends Controller
     public function index()
     {
         $criterias = Criterion::all();
+        // Mengubah skala bobot dari 0-1 menjadi 0-100 untuk memudahkan tampilan (biasanya user lebih nyaman melihat 20 daripada 0.20)
+        // Jika Anda tetap ingin 0-1, silakan sesuaikan di sini.
         $totalWeight = round((float) $criterias->sum('weight'), 2);
         return view('admin.criterias.index', compact('criterias', 'totalWeight'));
     }
@@ -31,18 +33,19 @@ class CriterionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'code'   => 'required|string|unique:criterias,code',
+            // PERBAIKAN: Menggunakan tabel 'criteria' (bukan 'criterias')
+            'code'   => 'required|string|unique:criteria,code',
             'name'   => 'required|string',
-            'weight' => 'required|numeric|min:0.01|max:1.00',
+            'weight' => 'required|numeric|min:0.01|max:100', // Asumsi input 1-100
             'type'   => 'required|in:benefit,cost',
         ]);
 
         $currentTotal = round((float) Criterion::sum('weight'), 2);
         $newWeight = round((float) $request->weight, 2);
 
-        // Validasi agar total akumulasi bobot tidak melebihi 1.00 (100%)
-        if (($currentTotal + $newWeight) > 1.00) {
-            return back()->withInput()->with('error', 'Akumulasi total bobot tidak boleh melebihi 1.00 (100%). Total bobot saat ini: ' . number_format($currentTotal, 2) . ', penambahan ini akan menjadi: ' . number_format($currentTotal + $newWeight, 2));
+        // Validasi agar total akumulasi bobot tidak melebihi 100
+        if (($currentTotal + $newWeight) > 100) {
+            return back()->withInput()->with('error', 'Akumulasi total bobot tidak boleh melebihi 100%. Total saat ini: ' . $currentTotal . '%.');
         }
 
         Criterion::create([
@@ -72,19 +75,18 @@ class CriterionController extends Controller
         $criterion = Criterion::findOrFail($id);
 
         $request->validate([
-            'code'   => 'required|string|unique:criterias,code,' . $criterion->id,
+            // PERBAIKAN: Menggunakan tabel 'criteria' (bukan 'criterias')
+            'code'   => 'required|string|unique:criteria,code,' . $criterion->id,
             'name'   => 'required|string',
-            'weight' => 'required|numeric|min:0.01|max:1.00',
+            'weight' => 'required|numeric|min:0.01|max:100',
             'type'   => 'required|in:benefit,cost',
         ]);
 
-        // Hitung total bobot kriteria lain selain yang sedang diedit
         $othersWeight = round((float) Criterion::where('id', '!=', $criterion->id)->sum('weight'), 2);
         $newWeight = round((float) $request->weight, 2);
 
-        // Validasi akumulasi bobot tidak lebih dari 1.00
-        if (($othersWeight + $newWeight) > 1.00) {
-            return back()->withInput()->with('error', 'Akumulasi total bobot tidak boleh melebihi 1.00 (100%). Total bobot akan menjadi: ' . number_format($othersWeight + $newWeight, 2));
+        if (($othersWeight + $newWeight) > 100) {
+            return back()->withInput()->with('error', 'Akumulasi total bobot tidak boleh melebihi 100%. Total bobot akan menjadi: ' . ($othersWeight + $newWeight) . '%.');
         }
 
         $criterion->update([
@@ -104,9 +106,8 @@ class CriterionController extends Controller
     {
         $criterion = Criterion::findOrFail($id);
 
-        // Proteksi: Sistem harus menyisakan minimal 1 kriteria agar mesin SMART tidak error
         if (Criterion::count() <= 1) {
-            return back()->with('error', 'Tidak dapat menghapus kriteria terakhir. Sistem membutuhkan minimal 1 kriteria untuk dieksekusi.');
+            return back()->with('error', 'Tidak dapat menghapus kriteria terakhir.');
         }
 
         $criterion->delete();
