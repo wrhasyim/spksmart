@@ -42,7 +42,7 @@
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Cek Penempatan Mandiri Siswa</h2>
             <p class="text-center text-gray-500 mb-6 text-sm">Masukkan NISN Anda untuk mengecek status penempatan Praktik Kerja Lapangan (PKL).</p>
             
-            <form action="{{ route('track.nisn') }}" method="POST" class="flex gap-3">
+            <form action="{{ route('track_nisn') }}" method="POST" class="flex gap-3">
                 @csrf
                 <input type="text" name="nisn" placeholder="Ketik NISN di sini..." required class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-lg py-3 px-4">
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-md transition duration-150 shadow-md">

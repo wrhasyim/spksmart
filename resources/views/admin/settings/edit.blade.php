@@ -1,86 +1,100 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Pengaturan Aplikasi & Kop Surat') }}
-        </h2>
-    </x-slot>
+@extends('layouts.hubin')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            
-            @if (session('success'))
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ session('success') }}</span>
-                </div>
-            @endif
+@section('title', 'Pengaturan Aplikasi')
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="text-lg font-bold border-b pb-2 mb-4">Identitas Sekolah (Untuk Kop PDF)</h3>
-                            
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Logo Sekolah</label>
-                                @if($setting->logo_path)
-                                    <img src="{{ asset('storage/' . $setting->logo_path) }}" alt="Logo" class="h-20 mb-2">
-                                @endif
-                                <input type="file" name="logo" class="border p-2 w-full rounded">
-                                <p class="text-xs text-gray-500 mt-1">Format: JPG/PNG, Maks: 2MB.</p>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Instansi Atas (Opsional)</label>
-                                <input type="text" name="instansi_atas" value="{{ old('instansi_atas', $setting->instansi_atas) }}" class="border p-2 w-full rounded focus:ring-indigo-500" placeholder="Contoh: PEMERINTAH PROVINSI JAWA BARAT">
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Nama Sekolah</label>
-                                <input type="text" name="nama_sekolah" value="{{ old('nama_sekolah', $setting->nama_sekolah) }}" required class="border p-2 w-full rounded focus:ring-indigo-500">
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Alamat Lengkap</label>
-                                <textarea name="alamat_sekolah" rows="2" class="border p-2 w-full rounded focus:ring-indigo-500">{{ old('alamat_sekolah', $setting->alamat_sekolah) }}</textarea>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Kontak (Telp / Email / Web)</label>
-                                <input type="text" name="kontak_sekolah" value="{{ old('kontak_sekolah', $setting->kontak_sekolah) }}" class="border p-2 w-full rounded focus:ring-indigo-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-bold border-b pb-2 mb-4">Data Kepala Sekolah & Surat Pengantar</h3>
-                            
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Nama Kepala Sekolah</label>
-                                <input type="text" name="nama_kepala_sekolah" value="{{ old('nama_kepala_sekolah', $setting->nama_kepala_sekolah) }}" class="border p-2 w-full rounded focus:ring-indigo-500" placeholder="Lengkap dengan gelar">
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">NIP Kepala Sekolah</label>
-                                <input type="text" name="nip_kepala_sekolah" value="{{ old('nip_kepala_sekolah', $setting->nip_kepala_sekolah) }}" class="border p-2 w-full rounded focus:ring-indigo-500">
-                            </div>
-
-                            <div class="mb-4 mt-6">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Teks Paragraf Pengantar Prakerin (PDF)</label>
-                                <textarea name="teks_pengantar_surat" rows="5" class="border p-2 w-full rounded focus:ring-indigo-500">{{ old('teks_pengantar_surat', $setting->teks_pengantar_surat) }}</textarea>
-                                <p class="text-xs text-gray-500 mt-1">Kalimat pembuka yang akan dicetak di Surat Pengantar siswa yang lolos.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end mt-6 border-t pt-4">
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded shadow">
-                            Simpan Pengaturan
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+@section('content')
+<div class="max-w-5xl mx-auto space-y-8 py-4">
+    
+    <div class="border-b border-gray-100 pb-4">
+        <h1 class="text-2xl font-extrabold text-gray-900">⚙️ Pengaturan Aplikasi & Kop Surat</h1>
+        <p class="text-sm text-gray-500 mt-1">Sesuaikan identitas sekolah, logo, dan data kepala sekolah untuk keperluan cetak dokumen SPK.</p>
     </div>
-</x-app-layout>
+
+    @if (session('success'))
+        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm font-bold text-sm flex items-center animate-fade-in">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            Berhasil: {{ session('success') }}
+        </div>
+    @endif
+
+    <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="bg-white p-8 shadow-sm rounded-2xl border border-gray-100 h-fit">
+                <header class="mb-6 border-b border-gray-50 pb-4">
+                    <h2 class="text-lg font-bold text-gray-900">Identitas Sekolah (Untuk Kop PDF)</h2>
+                </header>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Logo Sekolah</label>
+                        @if(isset($setting) && $setting->logo_path)
+                            <div class="mb-3 bg-gray-50 border border-gray-200 rounded-xl p-2 w-fit">
+                                <img src="{{ asset('storage/' . $setting->logo_path) }}" alt="Logo" class="h-16 object-contain">
+                            </div>
+                        @endif
+                        <input type="file" name="logo" accept="image/jpeg,image/png" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-gray-200 rounded-xl cursor-pointer transition">
+                        <p class="text-[11px] text-gray-400 mt-1.5 font-medium">Format: JPG/PNG, Maks: 2MB.</p>
+                        @error('logo') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Instansi Atas (Opsional)</label>
+                        <input type="text" name="instansi_atas" value="{{ old('instansi_atas', $setting->instansi_atas ?? '') }}" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: PEMERINTAH PROVINSI JAWA BARAT">
+                        @error('instansi_atas') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Nama Sekolah</label>
+                        <input type="text" name="nama_sekolah" value="{{ old('nama_sekolah', $setting->nama_sekolah ?? '') }}" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: SMK Negeri 1 SPK">
+                        @error('nama_sekolah') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Alamat Lengkap & Kontak</label>
+                        <textarea name="alamat_sekolah" rows="3" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: Jl. Pendidikan No. 1, Kota Belajar. Telp: (021) 123456">{{ old('alamat_sekolah', $setting->alamat_sekolah ?? '') }}</textarea>
+                        @error('alamat_sekolah') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 shadow-sm rounded-2xl border border-gray-100 h-fit">
+                <header class="mb-6 border-b border-gray-50 pb-4">
+                    <h2 class="text-lg font-bold text-gray-900">Data Kepala Sekolah & Surat</h2>
+                </header>
+
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Nama Kepala Sekolah</label>
+                        <input type="text" name="kepala_sekolah" value="{{ old('kepala_sekolah', $setting->kepala_sekolah ?? '') }}" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: Drs. H. Pendidik Utama, M.Pd.">
+                        @error('kepala_sekolah') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">NIP Kepala Sekolah</label>
+                        <input type="text" name="nip_kepala_sekolah" value="{{ old('nip_kepala_sekolah', $setting->nip_kepala_sekolah ?? '') }}" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: 19800101 200501 1 001">
+                        @error('nip_kepala_sekolah') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Teks Paragraf Pengantar Prakerin (Cetak PDF)</label>
+                        <textarea name="teks_pengantar" rows="6" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-gray-50 focus:bg-white transition leading-relaxed">{{ old('teks_pengantar', $setting->teks_pengantar ?? '') }}</textarea>
+                        @error('teks_pengantar') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-8 flex justify-end">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl shadow-lg font-extrabold transition-all hover:scale-[1.02] flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                Simpan Konfigurasi
+            </button>
+        </div>
+    </form>
+</div>
+@endsection

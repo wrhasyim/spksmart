@@ -69,6 +69,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
     Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
     Route::get('/history', [SpkController::class, 'history'])->name('admin.spk.history');
+    // Rute Pembaruan Password
+    Route::put('/password', [\App\Http\Controllers\Auth\PasswordController::class, 'update'])->name('password.update');
     
     // Intervensi Manual (Manual Override)
     Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
