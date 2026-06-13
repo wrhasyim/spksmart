@@ -71,7 +71,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/history', [SpkController::class, 'history'])->name('admin.spk.history');
     // Rute Pembaruan Password
     Route::put('/password', [\App\Http\Controllers\Auth\PasswordController::class, 'update'])->name('password.update');
-    
+
     // Intervensi Manual (Manual Override)
     Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
     Route::put('/placements/{placement}', [SpkController::class, 'update'])->name('admin.placements.update');
@@ -101,7 +101,7 @@ Route::middleware(['auth'])->group(function () {
         ->only(['index', 'store', 'destroy'])
         ->names('admin.academic_years');
     Route::post('/academic_years/{academic_year}/set_active', [AcademicYearController::class, 'setActive'])->name('admin.academic_years.set_active');
-
+Route::post('/placements/{placement}/approve', [App\Http\Controllers\SpkController::class, 'approve'])->name('admin.spk.approve');
     // Master Siswa & Import
     Route::get('/students/sample_excel', [StudentController::class, 'downloadSample'])->name('admin.students.sample_excel');
     Route::post('/students/import', [StudentController::class, 'import'])->name('admin.students.import');

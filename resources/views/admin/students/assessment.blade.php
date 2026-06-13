@@ -35,18 +35,18 @@
                     <p class="text-sm text-gray-500 font-medium mb-1">Siswa Dinilai</p>
                     <p class="text-lg font-bold text-indigo-900">{{ $student->name }}</p>
                 </div>
-                <div class="flex gap-4 text-sm bg-white px-4 py-2 rounded-lg border border-indigo-50">
+                <div class="flex gap-4 text-sm bg-white px-4 py-2 rounded-lg border border-indigo-50 overflow-x-auto">
                     <div>
                         <span class="text-gray-400 block text-xs">NISN</span>
                         <span class="font-bold text-gray-800">{{ $student->nisn }}</span>
                     </div>
                     <div class="border-l border-gray-200 pl-4">
                         <span class="text-gray-400 block text-xs">Kelas</span>
-                        <span class="font-bold text-gray-800">{{ $student->class }}</span>
+                        <span class="font-bold text-gray-800">{{ $student->class_name ?? '-' }}</span>
                     </div>
                     <div class="border-l border-gray-200 pl-4">
                         <span class="text-gray-400 block text-xs">Jurusan</span>
-                        <span class="font-bold text-indigo-600">{{ $student->major->code ?? '-' }}</span>
+                        <span class="font-bold text-indigo-600">{{ $student->major->name ?? $student->major->code ?? '-' }}</span>
                     </div>
                 </div>
             </div>
@@ -74,7 +74,7 @@
                                 <span class="px-2 py-0.5 ml-1 text-[10px] rounded {{ $isCost ? 'bg-red-200 text-red-900' : 'bg-gray-100 text-gray-600' }}">{{ ucfirst($criterion->type) }}</span>
                             </label>
                             
-                            <input type="number" name="scores[{{ $criterion->id }}]" value="{{ $val }}" min="0" max="100" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-white transition" required>
+                            <input type="number" step="0.01" name="scores[{{ $criterion->id }}]" value="{{ $val }}" min="0" max="100" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 bg-white transition font-bold text-gray-900" required>
                             
                             @if($isCost)
                                 <p class="text-xs text-red-600 mt-2 font-medium flex gap-1 items-start leading-tight">
@@ -88,8 +88,8 @@
                     @endforeach
                     
                     @if($criteria->isEmpty())
-                        <div class="col-span-2 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm font-medium">
-                            ⚠️ Belum ada Kriteria SMART yang diatur. Silakan tambahkan kriteria terlebih dahulu pada menu "Bobot Kriteria SMART".
+                        <div class="col-span-1 md:col-span-2 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm font-medium">
+                            ⚠️ Belum ada Kriteria SMART yang diatur. Silakan tambahkan kriteria terlebih dahulu pada menu "Kriteria".
                         </div>
                     @endif
                 </div>

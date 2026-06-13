@@ -13,8 +13,6 @@ class CriterionController extends Controller
     public function index()
     {
         $criterias = Criterion::all();
-        // Mengubah skala bobot dari 0-1 menjadi 0-100 untuk memudahkan tampilan (biasanya user lebih nyaman melihat 20 daripada 0.20)
-        // Jika Anda tetap ingin 0-1, silakan sesuaikan di sini.
         $totalWeight = round((float) $criterias->sum('weight'), 2);
         return view('admin.criterias.index', compact('criterias', 'totalWeight'));
     }
@@ -33,10 +31,10 @@ class CriterionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            // PERBAIKAN: Menggunakan tabel 'criteria' (bukan 'criterias')
-            'code'   => 'required|string|unique:criteria,code',
-            'name'   => 'required|string',
-            'weight' => 'required|numeric|min:0.01|max:100', // Asumsi input 1-100
+            // PERBAIKAN: Kembali menggunakan tabel 'criteria' sesuai database Anda
+            'code'   => 'required|string|max:10|unique:criteria,code',
+            'name'   => 'required|string|max:255',
+            'weight' => 'required|numeric|min:0.01|max:100',
             'type'   => 'required|in:benefit,cost',
         ]);
 
@@ -45,17 +43,17 @@ class CriterionController extends Controller
 
         // Validasi agar total akumulasi bobot tidak melebihi 100
         if (($currentTotal + $newWeight) > 100) {
-            return back()->withInput()->with('error', 'Akumulasi total bobot tidak boleh melebihi 100%. Total saat ini: ' . $currentTotal . '%.');
+            return back()->withInput()->withErrors(['weight' => 'Akumulasi total bobot tidak boleh melebihi 100%. Total saat ini: ' . $currentTotal . '%.']);
         }
 
         Criterion::create([
-            'code'   => strtolower($request->code),
+            'code'   => strtoupper($request->code),
             'name'   => $request->name,
             'weight' => $newWeight,
             'type'   => $request->type,
         ]);
 
-        return redirect()->route('admin.criterias.index')->with('success', 'Kriteria berhasil ditambahkan.');
+        return back()->with('success', 'Kriteria SMART berhasil ditambahkan.');
     }
 
     /**
@@ -75,9 +73,9 @@ class CriterionController extends Controller
         $criterion = Criterion::findOrFail($id);
 
         $request->validate([
-            // PERBAIKAN: Menggunakan tabel 'criteria' (bukan 'criterias')
-            'code'   => 'required|string|unique:criteria,code,' . $criterion->id,
-            'name'   => 'required|string',
+            // PERBAIKAN: Kembali menggunakan tabel 'criteria' sesuai database Anda
+            'code'   => 'required|string|max:10|unique:criteria,code,' . $criterion->id,
+            'name'   => 'required|string|max:255',
             'weight' => 'required|numeric|min:0.01|max:100',
             'type'   => 'required|in:benefit,cost',
         ]);
@@ -86,11 +84,11 @@ class CriterionController extends Controller
         $newWeight = round((float) $request->weight, 2);
 
         if (($othersWeight + $newWeight) > 100) {
-            return back()->withInput()->with('error', 'Akumulasi total bobot tidak boleh melebihi 100%. Total bobot akan menjadi: ' . ($othersWeight + $newWeight) . '%.');
+            return back()->withInput()->withErrors(['weight' => 'Akumulasi total bobot tidak boleh melebihi 100%. Total bobot akan menjadi: ' . ($othersWeight + $newWeight) . '%.']);
         }
 
         $criterion->update([
-            'code'   => strtolower($request->code),
+            'code'   => strtoupper($request->code),
             'name'   => $request->name,
             'weight' => $newWeight,
             'type'   => $request->type,
@@ -107,7 +105,7 @@ class CriterionController extends Controller
         $criterion = Criterion::findOrFail($id);
 
         if (Criterion::count() <= 1) {
-            return back()->with('error', 'Tidak dapat menghapus kriteria terakhir.');
+            return back()->with('error', 'Tidak dapat menghapus kriteria terakhir. Mesin SPK membutuhkan minimal 1 kriteria untuk bekerja.');
         }
 
         $criterion->delete();

@@ -19,10 +19,29 @@
     </div>
 
     @if (session('success'))
-        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm flex items-center">
+        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm flex items-center animate-fade-in">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             {{ session('success') }}
         </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm animate-fade-in">
+            <div class="flex items-center mb-2 font-bold">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Gagal Menyimpan Kriteria:
+            </div>
+            <ul class="list-disc list-inside space-y-1 ml-2 text-xs">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                document.getElementById('createCriteriaModal').classList.remove('hidden');
+            });
+        </script>
     @endif
 
     <div class="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-100">
@@ -30,6 +49,7 @@
             <table class="min-w-full divide-y divide-gray-100">
                 <thead class="bg-gray-50/50">
                     <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kode</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Kriteria</th>
                         <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Sifat / Tipe</th>
                         <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Bobot Statis (W)</th>
@@ -39,6 +59,11 @@
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($criterias as $criteria)
                     <tr class="hover:bg-indigo-50/30 transition duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold px-3 py-1 rounded-md text-xs tracking-wider">
+                                {{ $criteria->code }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                             {{ $criteria->name }}
                         </td>
@@ -54,7 +79,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end items-center space-x-3">
-                                <form action="{{ route('admin.criterias.destroy', $criteria->id) }}" method="POST" onsubmit="return confirm('Menghapus kriteria akan berdampak pada kolom nilai siswa! Lanjutkan?');">
+                                <form action="{{ route('admin.criterias.destroy', $criteria->id) }}" method="POST" onsubmit="return confirm('Menghapus kriteria akan berdampak pada perhitungan nilai siswa yang sudah ada! Lanjutkan?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-gray-400 hover:text-red-600 transition">
@@ -66,7 +91,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-gray-500 font-medium">
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500 font-medium">
                             Belum ada parameter kriteria yang dibuat.
                         </td>
                     </tr>
@@ -85,20 +110,28 @@
         </div>
         <form action="{{ route('admin.criterias.store') }}" method="POST" class="p-6 space-y-4">
             @csrf
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Nama Kriteria</label>
-                <input type="text" name="name" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: Nilai Keaktifan">
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-1">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Kode</label>
+                    <input type="text" name="code" value="{{ old('code') }}" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: C1">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Kriteria</label>
+                    <input type="text" name="name" value="{{ old('name') }}" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: Nilai Keaktifan">
+                </div>
             </div>
+
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-2">Sifat Kriteria</label>
                 <select name="type" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
-                    <option value="benefit">Benefit (Makin tinggi makin baik)</option>
-                    <option value="cost">Cost (Makin rendah makin baik - Cth: Jarak/Absen)</option>
+                    <option value="benefit" {{ old('type') == 'benefit' ? 'selected' : '' }}>Benefit (Makin tinggi makin baik)</option>
+                    <option value="cost" {{ old('type') == 'cost' ? 'selected' : '' }}>Cost (Makin rendah makin baik)</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-2">Bobot Nilai (Angka)</label>
-                <input type="number" name="weight" required min="1" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: 25">
+                <input type="number" step="0.01" name="weight" value="{{ old('weight') }}" required min="1" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition" placeholder="Cth: 25">
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('createCriteriaModal').classList.add('hidden')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition text-sm">Batal</button>

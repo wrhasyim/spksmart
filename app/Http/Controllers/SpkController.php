@@ -177,4 +177,30 @@ public function history()
         // Mengarahkan ke file view yang disimpan di folder placements
         return view('admin.placements.history', compact('history'));
     }
+    /**
+     * ACC Penempatan (Validasi Hubin & Potong Kuota Permanen)
+     */
+    public function approve(Placement $placement)
+    {
+        $placement->load(['companySlot', 'student']);
+        $slot = $placement->companySlot;
+
+        if (!$slot) {
+            return back()->with('error', 'Gagal! Data alokasi kuota industri tidak ditemukan.');
+        }
+
+        if ($slot->quota <= 0) {
+            return back()->with('error', 'Gagal ACC! Kuota utama industri ini sudah terisi penuh.');
+        }
+
+        // Kunci penempatan agar kebal dari generate ulang SPK, lalu potong kuota
+        $placement->update([
+            'placement_method' => 'SYSTEM_APPROVED' 
+        ]);
+
+        // Potong kuota secara permanen di database
+        $slot->decrement('quota');
+
+        return back()->with('success', "Penempatan siswa {$placement->student->name} berhasil di-ACC! Kuota industri telah resmi dikurangi.");
+    }
 }

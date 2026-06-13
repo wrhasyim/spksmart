@@ -85,14 +85,14 @@ class SmartEngineService
                      ->where('placement_method', 'SYSTEM')
                      ->delete();
 
-            // Kembalikan status siswa yang sebelumnya lulus karena sistem, menjadi belum diproses
+            // Kembalikan status siswa yang sebelumnya lulus karena sistem, menjadi belum prakerin
             Student::where('academic_year_id', $academicYearId)
                    ->whereDoesntHave('placement', function($query) {
                        // Siswa yang tidak punya penempatan manual
                        $query->where('placement_method', 'MANUAL_OVERRIDE');
                    })
-                   ->update(['status' => 'belum_diproses']); // Reset status
-
+                   ->update(['status' => 'belum_prakerin']); 
+                   
             // Ambil siswa yang BELUM Lolos (Bypass siswa yang sudah di-lock manual)
             $students = Student::where('academic_year_id', $academicYearId)
                 ->where('status', '!=', 'lolos_prakerin')
@@ -188,7 +188,13 @@ class SmartEngineService
         ]);
 
         $companySlot->available_quota--; 
-        $student->update(['status' => 'lolos_prakerin']);
+        
+        // PERBAIKAN: Gunakan Query Builder agar Laravel murni hanya memperbarui kolom status di database.
+        // Ini mencegah properti temporary (final_score, absensi_score) ikut terdorong ke dalam query SQL.
+        \App\Models\Student::where('id', $student->id)->update(['status' => 'lolos_prakerin']);
+        
+        // Sesuaikan status pada objek yang sedang di-loop di memory agar tetap sinkron
+        $student->status = 'lolos_prakerin';
 
         return true;
     }
