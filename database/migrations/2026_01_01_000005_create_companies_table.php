@@ -4,24 +4,16 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    public function up(): void
-    {
+return new class extends Migration {
+    public function up(): void {
         Schema::create('companies', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->text('address');
             $table->string('phone')->nullable();
-            $table->string('email')->nullable();
-            // Kolom kuota, nilai, dan relasi jurusan DIHAPUS dari sini
             $table->timestamps();
-            
+            $table->softDeletes(); // Agar riwayat aman jika PT dihapus
         });
     }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('companies');
-    }
+    public function down(): void { Schema::dropIfExists('companies'); }
 };

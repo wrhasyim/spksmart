@@ -6,12 +6,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void {
-        Schema::create('academic_years', function (Blueprint $table) {
+        Schema::create('criteria', function (Blueprint $table) {
             $table->id();
+            $table->string('code')->unique();
             $table->string('name');
-            $table->boolean('is_active')->default(false);
+            $table->decimal('weight', 5, 2);
+            $table->enum('type', ['benefit', 'cost']);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
-    public function down(): void { Schema::dropIfExists('academic_years'); }
+    public function down(): void { Schema::dropIfExists('criteria'); }
 };
