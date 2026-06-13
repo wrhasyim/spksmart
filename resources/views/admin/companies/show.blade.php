@@ -1,119 +1,112 @@
 @extends('layouts.hubin')
 
-@section('title', 'Kelola Kuota Perusahaan')
+@section('title', 'Detail Perusahaan & Kuota')
 
 @section('content')
-
-    <div class="mb-6">
-        <a href="{{ route('admin.companies.index') }}" class="text-indigo-600 hover:underline font-medium">&larr; Kembali ke Daftar Perusahaan</a>
+    <div class="mb-6 flex items-center justify-between">
+        <a href="{{ route('admin.companies.index') }}" class="text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-2 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Kembali ke Daftar Perusahaan
+        </a>
+        
+        <a href="{{ route('admin.companies.edit', $company->id) }}" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-xl shadow-sm font-semibold transition duration-150 text-sm">
+            Edit Profil Perusahaan
+        </a>
     </div>
 
     @if(session('success'))
-        <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
-            {{ session('success') }}
+        <div class="mb-6 bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-4 rounded-xl shadow-sm flex items-center">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <p class="text-sm font-medium">{{ session('success') }}</p>
         </div>
     @endif
 
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 bg-gradient-to-r from-gray-50 to-white">
-        <div class="md:col-span-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">Profil Industri Mitra</span>
-            <h1 class="text-2xl font-extrabold text-gray-900 mt-2">{{ $company->name }}</h1>
-            <p class="text-sm text-gray-500 mt-1">📍 {{ $company->address ?? 'Alamat belum diisi.' }}</p>
-        </div>
-        <div class="border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6 text-sm text-gray-600 flex flex-col justify-center gap-1">
-            <div><b>📞 Telepon:</b> {{ $company->phone ?? '-' }}</div>
-            <div><b>✉️ Email:</b> {{ $company->email ?? '-' }}</div>
+    <div class="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-100 mb-8">
+        <div class="px-6 py-6 border-b border-gray-100 bg-indigo-50/30 flex items-start gap-4">
+            <div class="bg-indigo-100 p-3 rounded-xl text-indigo-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-900">{{ $company->name }}</h2>
+                <div class="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
+                    <span class="flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg> {{ $company->phone ?? 'Belum ada telepon' }}</span>
+                    <span class="flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg> {{ $company->email ?? 'Belum ada email' }}</span>
+                </div>
+                <p class="mt-2 text-sm text-gray-500">{{ $company->address ?? 'Alamat belum diatur' }}</p>
+            </div>
         </div>
     </div>
 
-    <form id="filterForm" method="GET" action="{{ url()->current() }}" class="mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <label for="academicYearSelect" class="text-sm font-bold text-gray-700">Atur Kuota Pada Periode:</label>
-            <select name="academic_year_id" id="academicYearSelect" onchange="document.getElementById('filterForm').submit()" class="mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm cursor-pointer font-semibold">
-                @foreach($allYears as $year)
-                    <option value="{{ $year->id }}" {{ $selectedYearId == $year->id ? 'selected' : '' }}>
-                        {{ $year->name }} @if($year->is_active) • (Aktif) @endif
-                    </option>
-                @endforeach
-            </select>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <div>
+            <h3 class="text-xl font-bold text-gray-900">Gelombang Lowongan / Kuota Prakerin</h3>
+            <p class="text-sm text-gray-500 mt-1">Atur posisi, kuota, dan jurusan yang diterima oleh perusahaan ini.</p>
         </div>
-        <div class="text-xs text-gray-500 bg-indigo-50 text-indigo-700 p-2 rounded-md border border-indigo-100">
-            *Lowongan industri dan batasan nilai bersifat dinamis & terikat pada tahun periode di atas.
-        </div>
-    </form>
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-6 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-                <h3 class="font-extrabold text-gray-800 text-lg">Daftar Gelombang Lowongan / Kriteria Kuota</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Kriteria mutlak seleksi masuk algoritma SMART untuk perusahaan ini.</p>
-            </div>
-            <a href="{{ route('admin.company_slots.create', ['company_id' => $company->id]) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2.5 rounded-lg shadow-sm transition">
-                + Buka Lowongan Gelombang Baru
+        <div>
+            <a href="{{ route('admin.company-slots.create', ['company_id' => $company->id]) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl shadow-md font-bold transition duration-200 flex items-center gap-2 text-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                Tambah Kuota Lowongan
             </a>
         </div>
+    </div>
 
-        <div class="p-6 overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50">
+    <div class="bg-white shadow-sm overflow-hidden rounded-2xl border border-gray-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/50">
                     <tr>
-                        <th class="px-4 py-3 text-left font-bold text-gray-600 uppercase tracking-wider text-xs">Nama Gelombang</th>
-                        <th class="px-4 py-3 text-left font-bold text-gray-600 uppercase tracking-wider text-xs">Jurusan Target</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider text-xs bg-gray-100/50">Status Kuota</th>
-                        <th class="px-4 py-3 text-center font-bold text-gray-600 uppercase tracking-wider text-xs">Passing Grade (Total / Absen)</th>
-                        <th class="px-4 py-3 text-left font-bold text-gray-600 uppercase tracking-wider text-xs">Masa Berlaku</th>
-                        <th class="px-4 py-3 text-right font-bold text-gray-600 uppercase tracking-wider text-xs">Aksi</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Posisi / Bagian</th>
+                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Kuota</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Jurusan Diterima</th>
+                        <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-100">
-                    @forelse($slots as $slot)
-                        <tr class="hover:bg-gray-50/50 transition">
-                            <td class="px-4 py-4 whitespace-nowrap font-bold text-gray-900">{{ $slot->batch_name }}</td>
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                <span class="bg-gray-100 text-gray-800 font-semibold text-xs px-2.5 py-1 rounded-md border border-gray-200">
-                                    {{ $slot->major ? $slot->major->name : '-' }}
-                                </span>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($company->slots as $slot)
+                        <tr class="hover:bg-indigo-50/30 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ $slot->academicYear->name ?? '-' }}
+                                @if(isset($slot->academicYear) && $slot->academicYear->is_active)
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Aktif</span>
+                                @endif
                             </td>
-                            
-                            <td class="px-4 py-4 whitespace-nowrap bg-gray-50/50 text-center">
-                                <div class="flex items-center justify-center gap-1.5 text-xs">
-                                    <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold" title="Kuota Total">
-                                        Kuota: {{ $slot->quota }}
-                                    </span>
-                                    <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-bold" title="Kuota Terisi">
-                                        Terisi: {{ $slot->kuota_terisi }}
-                                    </span>
-                                    <span class="px-2 py-0.5 rounded font-extrabold {{ $slot->sisa_kuota > 0 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800' }}" title="Sisa Kuota">
-                                        Sisa: {{ $slot->sisa_kuota }}
-                                    </span>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-bold">
+                                {{ $slot->position_name ?? 'Prakerin Umum' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <span class="bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-full">{{ $slot->quota }} Siswa</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse($slot->majors as $major)
+                                        <span class="bg-gray-100 border border-gray-200 text-gray-700 px-2 py-1 rounded text-xs font-semibold">{{ $major->abbreviation ?? $major->name }}</span>
+                                    @empty
+                                        <span class="text-red-500 text-xs italic">Belum ada jurusan</span>
+                                    @endforelse
                                 </div>
                             </td>
-
-                            <td class="px-4 py-4 whitespace-nowrap text-center font-medium">
-                                <div class="text-gray-900">Total Min: <span class="text-indigo-600 font-bold">{{ $slot->min_total_score }}</span></div>
-                                <div class="text-xs text-gray-500 mt-0.5">Absen Min: {{ $slot->min_absensi_score }}</div>
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                                <div><b>Mulai:</b> {{ \Carbon\Carbon::parse($slot->start_date)->translatedFormat('d M Y') }}</div>
-                                <div class="mt-0.5"><b>Selesai:</b> {{ \Carbon\Carbon::parse($slot->end_date)->translatedFormat('d M Y') }}</div>
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-right font-medium">
-                                <div class="flex justify-end space-x-1.5 text-xs">
-                                    <a href="{{ route('admin.company_slots.edit', $slot->id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-200">
-                                        Ubah
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
+                                <div class="flex justify-end items-center space-x-3">
+                                    <a href="{{ route('admin.company-slots.edit', $slot->id) }}" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1.5 rounded-lg transition duration-150 font-bold text-xs">
+                                        Edit
                                     </a>
-                                    <form action="{{ route('admin.company_slots.destroy', $slot->id) }}" method="POST" onsubmit="return confirm('Hapus gelombang lowongan ini?')" class="inline-block">
+                                    <form action="{{ route('admin.company-slots.destroy', $slot->id) }}" method="POST" onsubmit="return confirm('Hapus lowongan ini?')" class="inline-block">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 px-2.5 py-1 rounded border border-red-200">Hapus</button>
+                                        <button type="submit" class="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1.5 rounded-lg transition duration-150 font-bold text-xs">
+                                            Hapus
+                                        </button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-12 text-center text-gray-500">
-                                🏢 Belum ada gelombang lowongan kuota yang dibuka untuk perusahaan ini pada periode tahun ajaran ini.
+                            <td colspan="5" class="px-6 py-12 text-center">
+                                <p class="text-sm text-gray-500 font-medium">Belum ada data lowongan/kuota untuk perusahaan ini.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -121,5 +114,4 @@
             </table>
         </div>
     </div>
-
 @endsection

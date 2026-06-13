@@ -15,8 +15,8 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\CriterionController;
-use App\Http\Controllers\MajorController; // BARU: Untuk Master Jurusan
-use App\Http\Controllers\SettingController; // BARU: Untuk Kop Surat & Konfigurasi
+use App\Http\Controllers\MajorController;
+use App\Http\Controllers\SettingController;
 
 // ==========================================
 // 1. HALAMAN PUBLIK & TRACKER NISN
@@ -26,7 +26,7 @@ Route::get('/', function () {
     return view('welcome', compact('setting'));
 })->name('welcome');
 
-Route::post('/track-nisn', function (Request $request) {
+Route::post('/track_nisn', function (Request $request) {
     $request->validate(['nisn' => 'required|string']);
     
     // Cari siswa beserta penempatan finalnya
@@ -44,7 +44,7 @@ Route::post('/track-nisn', function (Request $request) {
     }
 
     return back()->with('tracker_info', "Halo {$student->name}, status penempatan Anda saat ini: Masih dalam proses seleksi / Belum final.");
-})->name('track.nisn');
+})->name('track_nisn');
 
 
 // ==========================================
@@ -68,7 +68,7 @@ Route::middleware(['auth'])->group(function () {
     // ------------------------------------------
     Route::get('/dashboard', [SpkController::class, 'index'])->name('dashboard');
     Route::post('/spk/generate', [SpkController::class, 'generate'])->name('admin.spk.generate');
-    Route::get('/admin/spk/history', [SpkController::class, 'history'])->name('admin.spk.history');
+    Route::get('/history', [SpkController::class, 'history'])->name('admin.spk.history');
     
     // Intervensi Manual (Manual Override)
     Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
@@ -77,14 +77,14 @@ Route::middleware(['auth'])->group(function () {
     // ------------------------------------------
     // DOKUMEN & EXPORT (RIWAYAT)
     // ------------------------------------------
-    Route::get('/spk/print-pdf', [SpkController::class, 'printPdf'])->name('admin.spk.print');
+    Route::get('/spk/print_pdf', [SpkController::class, 'printPdf'])->name('admin.spk.print_pdf');
     Route::get('/spk/placement/{placement}/letter', [SpkController::class, 'printLetter'])->name('admin.spk.letter');
-    Route::get('/spk/export-excel', [SpkController::class, 'exportExcel'])->name('admin.spk.export-excel');
+    Route::get('/spk/export_excel', [SpkController::class, 'exportExcel'])->name('admin.spk.export_excel');
 
     // ------------------------------------------
     // MANAJEMEN MASTER DATA (CRUD)
     // ------------------------------------------
-    // Master Jurusan (Baru)
+    // Master Jurusan
     Route::resource('majors', MajorController::class)->names('admin.majors');
     
     // Master Perusahaan & Slot/Gelombang
@@ -95,15 +95,15 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('criterias', CriterionController::class)->names('admin.criterias');
     
     // Master Tahun Ajaran
-    Route::resource('academic-years', AcademicYearController::class)
+    Route::resource('academic_years', AcademicYearController::class)
         ->only(['index', 'store', 'destroy'])
-        ->names('admin.academic-years');
-    Route::post('/academic-years/{academic_year}/set-active', [AcademicYearController::class, 'setActive'])->name('admin.academic-years.set-active');
+        ->names('admin.academic_years');
+    Route::post('/academic_years/{academic_year}/set_active', [AcademicYearController::class, 'setActive'])->name('admin.academic_years.set_active');
 
     // Master Siswa & Import
-    Route::get('/students/sample-excel', [StudentController::class, 'downloadSample'])->name('admin.students.sample-excel');
+    Route::get('/students/sample_excel', [StudentController::class, 'downloadSample'])->name('admin.students.sample_excel');
     Route::post('/students/import', [StudentController::class, 'import'])->name('admin.students.import');
-    Route::resource('students', StudentController::class)->names('admin.students'); // Mencakup Edit Biodata & WA Ortu
+    Route::resource('students', StudentController::class)->names('admin.students');
 
     // Input Nilai / Assessment
     Route::get('/students/{student}/assessment', [AssessmentController::class, 'edit'])->name('admin.students.assessment.edit');
@@ -117,11 +117,8 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Pengaturan Aplikasi / Kop Surat (Baru)
+    // Pengaturan Aplikasi / Kop Surat
     Route::get('/settings', [SettingController::class, 'edit'])->name('admin.settings.edit');
     Route::put('/settings', [SettingController::class, 'update'])->name('admin.settings.update');
 
 });
-
-// MATIKAN/KOMENTARI baris ini agar rute default Breeze yang berbasis email tidak menimpa sistem kita
-// require __DIR__.'/auth.php';

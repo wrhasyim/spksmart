@@ -39,11 +39,11 @@
         </div>
         
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.spk.export-excel', ['academic_year_id' => $selectedYearId]) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm gap-1.5">
+            <a href="{{ route('admin.spk.export_excel', ['academic_year_id' => $selectedYearId]) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm gap-1.5">
                 📊 Export Excel
             </a>
 
-            <a href="{{ route('admin.spk.print', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm">
+            <a href="{{ route('admin.spk.print_pdf', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg shadow-sm font-bold transition flex items-center text-sm">
                 📄 Cetak PDF Laporan
             </a>
     
@@ -167,50 +167,19 @@
 
 
     @foreach($placements as $placement)
-        
         @php
             $a = $placement->student->assessment;
-            $c_absensi = $a ? $a->absensi : 0;
-            $c_fisik   = $a ? $a->fisik_mental : 0;
-            $c_aktif   = $a ? $a->keaktifan : 0;
-            $c_kasus   = $a ? $a->catatan_kasus : 0;
-            $c_admin   = $a ? $a->administrasi : 0;
+            // Ambil data JSON, buat array kosong jika siswa belum dinilai
+            $scoresData = $a ? $a->scores_data : [];
 
-            // --- MENGAMBIL BOBOT DINAMIS DARI DATABASE ---
-            $allCriterias = \App\Models\Criterion::all();
+            $allCriterias = \App\Models\Criterion::orderBy('id', 'asc')->get();
             $totalW = $allCriterias->sum('weight') > 0 ? $allCriterias->sum('weight') : 1;
             
-            $w_absensi = 0; $w_fisik = 0; $w_aktif = 0; $w_kasus = 0; $w_admin = 0;
-            
-            foreach($allCriterias as $c) {
-                $normWeight = $c->weight / $totalW;
-                if(strtolower($c->code) == 'absensi') $w_absensi = $normWeight;
-                if(strtolower($c->code) == 'fisik_mental') $w_fisik = $normWeight;
-                if(strtolower($c->code) == 'keaktifan') $w_aktif = $normWeight;
-                if(strtolower($c->code) == 'catatan_kasus') $w_kasus = $normWeight;
-                if(strtolower($c->code) == 'administrasi') $w_admin = $normWeight;
-            }
-            // --------------------------------------------------------
-
-            // Perhitungan Utilitas (Skala Max 100, Min 0)
-            $u_absensi = $c_absensi / 100;
-            $u_fisik   = $c_fisik / 100;
-            $u_aktif   = $c_aktif / 100;
-            $u_kasus   = (100 - $c_kasus) / 100; // Sifat Cost (Makin kecil makin baik)
-            $u_admin   = $c_admin / 100;
-
-            // Hasil Akhir Kriteria
-            $h_absensi = $u_absensi * $w_absensi;
-            $h_fisik   = $u_fisik * $w_fisik;
-            $h_aktif   = $u_aktif * $w_aktif;
-            $h_kasus   = $u_kasus * $w_kasus;
-            $h_admin   = $u_admin * $w_admin;
-            
-            $total_skor = ($h_absensi + $h_fisik + $h_aktif + $h_kasus + $h_admin) * 100;
+            $total_skor = 0;
         @endphp
 
         <div id="calc-modal-{{ $placement->id }}" class="fixed inset-0 bg-gray-900/60 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
-            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full border-t-4 border-indigo-600 flex flex-col max-h-[85vh]">
+            <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full border-t-4 border-indigo-600 flex flex-col max-h-[85vh]">
                 <div class="p-5 border-b border-gray-100 flex justify-between items-start flex-shrink-0">
                     <div>
                         <h3 class="text-lg font-extrabold text-gray-900">🧮 Transparansi Hitungan SMART</h3>
@@ -219,88 +188,52 @@
                     <button type="button" onclick="closeCalcModal({{ $placement->id }})" class="text-gray-400 hover:text-red-500 font-bold text-xl transition">&times;</button>
                 </div>
                 
-                <div class="p-5 overflow-y-auto flex-1 text-xs text-gray-700 space-y-4">
-                    
-                    <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100 text-indigo-900 mb-4">
-                        <div class="font-bold text-sm mb-3">📐 Rumus Nilai Utilitas SMART:</div>
-                        
-                        <div class="flex items-center gap-2 mb-3">
-                            <span>• <b>Benefit</b> (Absen, Fisik, Aktif, Admin) : <i>U<sub>i</sub></i> = </span>
-                            <div class="inline-flex flex-col items-center text-xs font-bold leading-tight">
-                                <span class="border-b border-indigo-400 pb-0.5 px-1">C<sub>out</sub> - 0</span>
-                                <span class="pt-0.5 px-1">100 - 0</span>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-2 mb-3">
-                            <span>• <b>Cost</b> (Catatan Kasus) : <i>U<sub>i</sub></i> = </span>
-                            <div class="inline-flex flex-col items-center text-xs font-bold leading-tight">
-                                <span class="border-b border-indigo-400 pb-0.5 px-1">100 - C<sub>out</sub></span>
-                                <span class="pt-0.5 px-1">100 - 0</span>
-                            </div>
-                        </div>
-
-                        <div class="text-[11px] text-indigo-700 font-medium pt-2 border-t border-indigo-200">
-                            *Keterangan: Nilai Akhir = <b>&Sigma; (Utilitas &times; Bobot) &times; 100</b>
-                        </div>
-                    </div>
-
-                    <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden text-center mt-4">
+                <div class="p-5 overflow-y-auto flex-1 text-xs text-gray-700">
+                    <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden text-center">
                         <thead class="bg-gray-100 font-bold text-gray-600 uppercase text-[10px]">
                             <tr>
                                 <th class="px-3 py-2 text-left">Kriteria</th>
                                 <th class="px-3 py-2">Sifat</th>
                                 <th class="px-3 py-2">Bobot (W)</th>
-                                <th class="px-3 py-2">Nilai (C)</th>
+                                <th class="px-3 py-2">Nilai Input (C)</th>
                                 <th class="px-3 py-2">Utilitas (U)</th>
                                 <th class="px-3 py-2 bg-indigo-50/50">Hasil (U x W)</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200 font-medium">
-                            <tr>
-                                <td class="px-3 py-2 text-left font-bold">Absensi</td>
-                                <td class="px-3 py-2 text-green-600 font-bold">Benefit</td>
-                                <td class="px-3 py-2">{{ number_format($w_absensi, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-gray-900">{{ $c_absensi }}</td>
-                                <td class="px-3 py-2">{{ number_format($u_absensi, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-indigo-600">{{ number_format($h_absensi, 4) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-3 py-2 text-left font-bold">Fisik & Mental</td>
-                                <td class="px-3 py-2 text-green-600 font-bold">Benefit</td>
-                                <td class="px-3 py-2">{{ number_format($w_fisik, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-gray-900">{{ $c_fisik }}</td>
-                                <td class="px-3 py-2">{{ number_format($u_fisik, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-indigo-600">{{ number_format($h_fisik, 4) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-3 py-2 text-left font-bold">Keaktifan</td>
-                                <td class="px-3 py-2 text-green-600 font-bold">Benefit</td>
-                                <td class="px-3 py-2">{{ number_format($w_aktif, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-gray-900">{{ $c_aktif }}</td>
-                                <td class="px-3 py-2">{{ number_format($u_aktif, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-indigo-600">{{ number_format($h_aktif, 4) }}</td>
-                            </tr>
-                            <tr class="bg-red-50/40">
-                                <td class="px-3 py-2 text-left font-bold text-red-900">Catatan Kasus</td>
-                                <td class="px-3 py-2 text-red-600 font-bold">Cost</td>
-                                <td class="px-3 py-2">{{ number_format($w_kasus, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-red-600">{{ $c_kasus }}</td>
-                                <td class="px-3 py-2 text-red-700">{{ number_format($u_kasus, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-indigo-600">{{ number_format($h_kasus, 4) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-3 py-2 text-left font-bold">Administrasi</td>
-                                <td class="px-3 py-2 text-green-600 font-bold">Benefit</td>
-                                <td class="px-3 py-2">{{ number_format($w_admin, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-gray-900">{{ $c_admin }}</td>
-                                <td class="px-3 py-2">{{ number_format($u_admin, 2) }}</td>
-                                <td class="px-3 py-2 font-bold text-indigo-600">{{ number_format($h_admin, 4) }}</td>
-                            </tr>
+                        <tbody class="divide-y divide-gray-200 font-medium bg-white">
+                            @forelse($allCriterias as $c)
+                                @php
+                                    $val = $scoresData[$c->id] ?? 0;
+                                    $normWeight = $c->weight / $totalW;
+                                    $isCost = strtolower($c->type) === 'cost';
+                                    
+                                    // Hitung Utilitas
+                                    if ($isCost) {
+                                        $u = (100 - $val) / 100;
+                                    } else {
+                                        $u = $val / 100;
+                                    }
+                                    
+                                    $hasil = $u * $normWeight;
+                                    $total_skor += ($hasil * 100);
+                                @endphp
+                                <tr class="{{ $isCost ? 'bg-red-50/30' : 'hover:bg-gray-50' }}">
+                                    <td class="px-3 py-2 text-left font-bold {{ $isCost ? 'text-red-900' : 'text-gray-800' }}">{{ $c->name }}</td>
+                                    <td class="px-3 py-2 font-bold {{ $isCost ? 'text-red-600' : 'text-green-600' }}">{{ ucfirst($c->type) }}</td>
+                                    <td class="px-3 py-2">{{ number_format($normWeight, 2) }}</td>
+                                    <td class="px-3 py-2 font-bold {{ $isCost ? 'text-red-600' : 'text-gray-900' }}">{{ $val }}</td>
+                                    <td class="px-3 py-2 {{ $isCost ? 'text-red-700' : '' }}">{{ number_format($u, 2) }}</td>
+                                    <td class="px-3 py-2 font-bold text-indigo-600">{{ number_format($hasil, 4) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-3 py-4 text-center text-gray-500">Kriteria belum diatur di sistem.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                         <tfoot class="bg-indigo-50 font-bold text-indigo-900 text-sm">
                             <tr>
-                                <td colspan="5" class="px-3 py-2.5 text-right font-extrabold">TOTAL SKOR AKHIR :</td>
+                                <td colspan="5" class="px-3 py-2.5 text-right font-extrabold">TOTAL SKOR AKHIR (x100) :</td>
                                 <td class="px-3 py-2.5 text-center text-base font-black text-indigo-700 bg-indigo-100/50 border border-indigo-200 rounded-b-lg">
                                     {{ round($total_skor, 2) }}
                                 </td>

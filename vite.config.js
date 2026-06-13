@@ -13,16 +13,16 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
-
+/*
     server: {
         host: '0.0.0.0', // Mengizinkan akses dari jaringan lokal
         hmr: {
             host: '192.168.0.124', // <--- Ganti dengan IP Address PC Utama kamu
         },
-    },
-    // server: {
-    //     watch: {
-    //         ignored: ['**/storage/framework/views/**'],
-    //     },
-    // },
+    }, */
+    server: {
+         watch: {
+            ignored: ['**/storage/framework/views/**'],
+        },
+     },
 });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\Assessment;
 use App\Models\AcademicYear;
+use App\Models\Criterion;
 use Illuminate\Http\Request;
 
 class AssessmentController extends Controller
@@ -14,36 +15,32 @@ class AssessmentController extends Controller
      */
     public function edit(Student $student)
     {
-        // UBAH BARIS INI: Pastikan ejaannya 'assessment' (s-nya dobel di tengah)
         $student->load('assessment'); 
         
-        return view('admin.students.assessment', compact('student'));
+        // Ambil semua kriteria yang ada di Master Data
+        $criteria = Criterion::orderBy('id', 'asc')->get(); 
+        
+        return view('admin.students.assessment', compact('student', 'criteria'));
     }
 
     /**
-     * Simpan / Perbarui nilai kriteria SMART siswa secara aman
+     * Simpan / Perbarui nilai kriteria SMART siswa secara aman ke dalam JSON
      */
     public function update(Request $request, Student $student)
     {
+        // Validasi input array dinamis
         $validated = $request->validate([
-            'absensi' => 'required|numeric|min:0|max:100',
-            'fisik_mental' => 'required|numeric|min:0|max:100',
-            'keaktifan' => 'required|numeric|min:0|max:100',
-            'catatan_kasus' => 'required|numeric|min:0|max:100',
-            'administrasi' => 'required|numeric|min:0|max:100',
+            'scores' => 'required|array', // Harus berupa array (JSON)
+            'scores.*' => 'required|numeric|min:0|max:100', // Nilai tiap kriteria 0-100
         ]);
 
         $activeYear = AcademicYear::where('is_active', true)->first();
 
-        // Menggunakan updateOrCreate untuk mencegah error duplikasi data saat mengubah nilai lama
+        // Menyimpan nilai dinamis ke kolom JSON 'scores_data'
         Assessment::updateOrCreate(
-            ['student_id' => $student->id], // Cari berdasarkan student_id
+            ['student_id' => $student->id],
             [
-                'absensi' => $validated['absensi'],
-                'fisik_mental' => $validated['fisik_mental'],
-                'keaktifan' => $validated['keaktifan'],
-                'catatan_kasus' => $validated['catatan_kasus'],
-                'administrasi' => $validated['administrasi'],
+                'scores_data' => $validated['scores'], 
                 'academic_year_id' => $activeYear ? $activeYear->id : $student->academic_year_id
             ]
         );
