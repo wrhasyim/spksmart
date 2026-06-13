@@ -2,24 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CompanySlot extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
+    // Tambahkan semua kolom baru ke dalam array fillable ini
     protected $fillable = [
-        'company_id', 
-        'academic_year_id', 
-        // 'major_id', <--- DIHAPUS, KARENA SEKARANG PAKAI PIVOT / RELASI MAJORS()
-        'batch_name', 
-        'gender_requirement', // Wajib ada untuk filter jenis kelamin
-        'quota', 
-        'min_total_score', 
+        'company_id',
+        'academic_year_id',
+        'major_id', // Pastikan major_id juga masuk!
+        'batch_name',
+        'gender_requirement',
+        'quota',
+        'min_total_score',
         'min_absensi_score',
-        'start_date', 
-        'end_date'
+        'start_date',
+        'end_date',
+        'quota_male',   
+        'quota_female', 
     ];
 
     public function company()
@@ -32,14 +36,8 @@ class CompanySlot extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
-    // Relasi Multi-Jurusan (Pivot)
-    public function majors()
+    public function major()
     {
-        return $this->belongsToMany(Major::class, 'company_slot_major');
-    }
-
-    public function placements()
-    {
-        return $this->hasMany(Placement::class);
+        return $this->belongsTo(Major::class);
     }
 }

@@ -83,7 +83,6 @@
                 @endforeach
             </ul>
         </div>
-        
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById('createSlotModal').classList.remove('hidden');
@@ -96,28 +95,36 @@
             <table class="min-w-full divide-y divide-gray-100">
                 <thead class="bg-gray-50/50">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kompetensi Keahlian (Jurusan)</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Kapasitas Slot Pria</th>
-                        <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Kapasitas Slot Wanita</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Gelombang & Jurusan</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kuota & Gender</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Standar Nilai Min.</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Periode Pelaksanaan</th>
                         <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($slots as $slot)
                     <tr class="hover:bg-indigo-50/30 transition duration-150">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                            {{ $slot->major->name }} ({{ $slot->major->code }})
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="bg-blue-50 text-blue-700 font-extrabold px-3 py-1.5 rounded-lg border border-blue-100">
-                                {{ $slot->quota_male }} Orang
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="font-extrabold text-gray-900 text-sm">{{ $slot->batch_name }}</span>
+                            <br>
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded mt-1 inline-block">
+                                {{ $slot->major->name ?? 'Semua Jurusan' }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="bg-pink-50 text-pink-700 font-extrabold px-3 py-1.5 rounded-lg border border-pink-100">
-                                {{ $slot->quota_female }} Orang
-                            </span>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="font-extrabold text-lg text-gray-900">{{ $slot->quota }}</span> <span class="text-xs text-gray-500">Orang</span>
+                            <br>
+                            <span class="text-xs font-medium text-gray-600">Gender: <strong>{{ strtoupper($slot->gender_requirement) }}</strong></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-xs text-gray-600">Skor Total: <strong class="text-gray-900">{{ $slot->min_total_score }}</strong></div>
+                            <div class="text-xs text-gray-600 mt-1">Skor Absensi: <strong class="text-gray-900">{{ $slot->min_absensi_score }}</strong></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-xs font-medium text-gray-900">{{ \Carbon\Carbon::parse($slot->start_date)->format('d M Y') }}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">s/d</div>
+                            <div class="text-xs font-medium text-gray-900">{{ \Carbon\Carbon::parse($slot->end_date)->format('d M Y') }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <form action="{{ route('admin.company_slots.destroy', $slot->id) }}" method="POST" onsubmit="return confirm('Hapus alokasi kuota ini?');">
@@ -131,7 +138,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center">
+                        <td colspan="5" class="px-6 py-12 text-center">
                             <div class="flex flex-col items-center justify-center text-gray-400">
                                 <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                 <p class="font-medium">Belum ada kuota / slot yang dibuka untuk periode ini.</p>
@@ -145,41 +152,106 @@
     </div>
 </div>
 
-<div id="createSlotModal" class="hidden fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-gray-100 overflow-hidden">
+<div id="createSlotModal" class="hidden fixed inset-0 bg-gray-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-100 overflow-hidden my-8 animate-fade-in">
         <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <h3 class="text-lg font-bold text-gray-900">Buka Kuota Baru</h3>
+            <h3 class="text-lg font-bold text-gray-900">Buka Kuota / Gelombang Baru</h3>
             <button onclick="document.getElementById('createSlotModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
         </div>
+        
         <form action="{{ route('admin.company_slots.store') }}" method="POST" class="p-6 space-y-5">
             @csrf
             <input type="hidden" name="company_id" value="{{ $company->id }}">
             <input type="hidden" name="academic_year_id" value="{{ $selectedYearId }}">
 
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">Program Keahlian (Jurusan)</label>
-                <select name="major_id" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
-                    @foreach($majors as $major)
-                        <option value="{{ $major->id }}" {{ old('major_id') == $major->id ? 'selected' : '' }}>{{ $major->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-blue-700 mb-2">Kuota Pria (Orang)</label>
-                    <input type="number" name="quota_male" required min="0" value="{{ old('quota_male', 0) }}" class="block w-full rounded-xl border-blue-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3 bg-blue-50 focus:bg-white transition font-bold text-blue-900">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Gelombang (Batch)</label>
+                    <input type="text" name="batch_name" value="{{ old('batch_name') }}" required placeholder="Cth: Gelombang 1 - 2026" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
                 </div>
+
                 <div>
-                    <label class="block text-sm font-bold text-pink-700 mb-2">Kuota Wanita (Orang)</label>
-                    <input type="number" name="quota_female" required min="0" value="{{ old('quota_female', 0) }}" class="block w-full rounded-xl border-pink-200 shadow-sm focus:border-pink-500 focus:ring-pink-500 text-sm px-4 py-3 bg-pink-50 focus:bg-white transition font-bold text-pink-900">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Program Keahlian (Jurusan)</label>
+                    <select name="major_id" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                        @foreach($majors as $major)
+                            <option value="{{ $major->id }}" {{ old('major_id') == $major->id ? 'selected' : '' }}>{{ $major->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Persyaratan Gender</label>
+                    <select name="gender_requirement" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                        <option value="Semua" {{ old('gender_requirement') == 'Semua' ? 'selected' : '' }}>Semua Gender (L & P)</option>
+                        <option value="L" {{ old('gender_requirement') == 'L' ? 'selected' : '' }}>Hanya Laki-laki (L)</option>
+                        <option value="P" {{ old('gender_requirement') == 'P' ? 'selected' : '' }}>Hanya Perempuan (P)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-indigo-700 mb-2">Total Kuota (Orang)</label>
+                    <input type="number" name="quota" required min="1" value="{{ old('quota') }}" placeholder="Cth: 10" class="block w-full rounded-xl border-indigo-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-indigo-50 focus:bg-white transition font-bold text-indigo-900">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Minimal Skor Total SPK</label>
+                    <input type="number" step="0.01" name="min_total_score" required min="0" value="{{ old('min_total_score', 0) }}" placeholder="Cth: 75.5" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Minimal Skor Kehadiran</label>
+                    <input type="number" step="0.01" name="min_absensi_score" required min="0" value="{{ old('min_absensi_score', 0) }}" placeholder="Cth: 80" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Tanggal Mulai Prakerin</label>
+                    <input type="date" id="input_start_date" name="start_date" required value="{{ old('start_date') }}" onchange="calculateEndDate()" class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-gray-50 focus:bg-white transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-blue-700 mb-2">Durasi Prakerin (Bulan)</label>
+                    <input type="number" id="input_duration" min="1" max="12" placeholder="Cth: 3" oninput="calculateEndDate()" class="block w-full rounded-xl border-blue-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-3 bg-blue-50 focus:bg-white transition font-bold text-blue-900">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-500 mb-2">Tanggal Selesai (Dihitung Otomatis)</label>
+                    <input type="date" id="input_end_date" name="end_date" required readonly value="{{ old('end_date') }}" class="block w-full rounded-xl border-gray-200 shadow-sm text-sm px-4 py-3 bg-gray-100 text-gray-500 cursor-not-allowed font-medium">
+                </div>
+
             </div>
             
-            <div class="flex justify-end gap-3 pt-4 border-t border-gray-50">
+            <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button type="button" onclick="document.getElementById('createSlotModal').classList.add('hidden')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-5 rounded-xl transition text-sm">Batal</button>
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition text-sm">Simpan Kuota</button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    function calculateEndDate() {
+        const startDateInput = document.getElementById('input_start_date').value;
+        const durationInput = document.getElementById('input_duration').value;
+        const endDateField = document.getElementById('input_end_date');
+
+        if (startDateInput && durationInput) {
+            // Buat objek tanggal dari input
+            let date = new Date(startDateInput);
+            
+            // Tambahkan jumlah bulan sesuai input durasi
+            date.setMonth(date.getMonth() + parseInt(durationInput));
+            
+            // Format kembali ke YYYY-MM-DD agar bisa masuk ke input type="date"
+            let year = date.getFullYear();
+            let month = String(date.getMonth() + 1).padStart(2, '0');
+            let day = String(date.getDate()).padStart(2, '0');
+            
+            endDateField.value = `${year}-${month}-${day}`;
+        } else {
+            // Kosongkan jika salah satu parameter belum diisi
+            endDateField.value = '';
+        }
+    }
+</script>
 @endsection

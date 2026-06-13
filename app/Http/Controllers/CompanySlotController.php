@@ -3,103 +3,58 @@
 namespace App\Http\Controllers;
 
 use App\Models\CompanySlot;
-use App\Models\Company;
-use App\Models\Major;
-use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
 class CompanySlotController extends Controller
 {
     /**
-     * Tampilkan form untuk menambah gelombang baru
-     */
-    public function create(Request $request)
-    {
-        $companyId = $request->get('company_id');
-        if (!$companyId) {
-            return redirect()->route('admin.companies.index')->with('error', 'Pilih perusahaan terlebih dahulu.');
-        }
-
-        $company = Company::findOrFail($companyId);
-        $majors = Major::all();
-        $academicYears = AcademicYear::where('is_active', true)->get();
-
-        return view('admin.company_slots.create', compact('company', 'majors', 'academicYears'));
-    }
-
-    /**
-     * Simpan gelombang baru dan KEMBALI ke halaman Detail Perusahaan
+     * Menyimpan Kuota / Gelombang Baru ke Database
      */
     public function store(Request $request)
     {
+        // 1. Validasi semua inputan dari form modal
         $validated = $request->validate([
-            'company_id'         => 'required|exists:companies,id', // Hanya di fungsi store
+            'company_id'         => 'required|exists:companies,id',
             'academic_year_id'   => 'required|exists:academic_years,id',
             'major_id'           => 'required|exists:majors,id',
             'batch_name'         => 'required|string|max:255',
-            'gender_requirement' => 'required|in:L,P,Semua', // <--- Tambahkan baris ini
+            'gender_requirement' => 'required|in:L,P,Semua',
             'quota'              => 'required|integer|min:1',
-            'min_total_score'    => 'required|numeric|min:0|max:100',
-            'min_absensi_score'  => 'required|numeric|min:0|max:100',
+            'min_total_score'    => 'required|numeric|min:0',
+            'min_absensi_score'  => 'required|numeric|min:0',
             'start_date'         => 'required|date',
             'end_date'           => 'required|date|after_or_equal:start_date',
         ]);
 
+        // 2. Logika Efisiensi Kuota (Sesuai Konsep Fleksibel)
+        if ($validated['gender_requirement'] === 'L') {
+            $validated['quota_male']   = $validated['quota'];
+            $validated['quota_female'] = 0;
+            
+        } elseif ($validated['gender_requirement'] === 'P') {
+            $validated['quota_male']   = 0;
+            $validated['quota_female'] = $validated['quota'];
+            
+        } else {
+            // Jika "Semua", kita tidak membedakan gender. 
+            // Mesin SPK akan murni bergantung pada kolom 'quota' utama.
+            $validated['quota_male']   = 0;
+            $validated['quota_female'] = 0;
+        }
+
+        // 3. Simpan ke database
         CompanySlot::create($validated);
 
-        return redirect()->route('admin.companies.show', $request->company_id)
-                         ->with('success', 'Gelombang lowongan baru berhasil dibuka!');
+        return back()->with('success', 'Gelombang/Kuota berhasil dibuka! Sistem siap memproses seleksi.');
     }
 
     /**
-     * Tampilkan form Edit gelombang (Fungsi yang sebelumnya Error/Hilang)
+     * Menghapus Kuota
      */
-    public function edit(CompanySlot $companySlot)
+    public function destroy(CompanySlot $company_slot)
     {
-        $company = $companySlot->company;
-        $majors = Major::all();
-        $academicYears = AcademicYear::all(); // Tampilkan semua untuk opsi edit
-
-        return view('admin.company_slots.edit', compact('companySlot', 'company', 'majors', 'academicYears'));
-    }
-
-    /**
-     * Perbarui data gelombang dan KEMBALI ke halaman Detail Perusahaan
-     */
-    public function update(Request $request, CompanySlot $companySlot)
-    {
-        $validated = $request->validate([
-            'company_id'         => 'required|exists:companies,id', // Hanya di fungsi store
-            'academic_year_id'   => 'required|exists:academic_years,id',
-            'major_id'           => 'required|exists:majors,id',
-            'batch_name'         => 'required|string|max:255',
-            'gender_requirement' => 'required|in:L,P,Semua', // <--- Tambahkan baris ini
-            'quota'              => 'required|integer|min:1',
-            'min_total_score'    => 'required|numeric|min:0|max:100',
-            'min_absensi_score'  => 'required|numeric|min:0|max:100',
-            'start_date'         => 'required|date',
-            'end_date'           => 'required|date|after_or_equal:start_date',
-        ]);
-
-        $companySlot->update($validated);
-
-        return redirect()->route('admin.companies.show', $companySlot->company_id)
-                         ->with('success', 'Data gelombang berhasil diperbarui.');
-    }
-
-    /**
-     * Hapus gelombang dan KEMBALI ke halaman Detail Perusahaan
-     */
-    public function destroy(CompanySlot $companySlot)
-    {
-        $companyId = $companySlot->company_id;
+        $company_slot->delete();
         
-        try {
-            $companySlot->delete();
-            return redirect()->route('admin.companies.show', $companyId)
-                             ->with('success', 'Gelombang lowongan berhasil dihapus.');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus. Gelombang ini kemungkinan sudah berisi siswa yang diterima.');
-        }
+        return back()->with('success', 'Alokasi kuota tersebut berhasil dihapus.');
     }
 }
