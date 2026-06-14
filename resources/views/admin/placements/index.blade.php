@@ -143,18 +143,20 @@
                                 </div>
                         
                                 <div class="flex items-center gap-2 mt-0.5">
-                                    @if($placement->status_pencocokan !== 'final')
-                                        <form action="{{ route('admin.spk.approve', $placement->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            <button type="submit" onclick="return confirm('ACC keputusan ini?')" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 hover:underline bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 transition flex items-center gap-0.5 shadow-sm">
-                                                ✅ ACC Hubin
-                                            </button>
-                                        </form>
-                                    @endif
-                                    
-                                    <a href="{{ route('admin.placements.edit', $placement->id) }}" class="text-xs font-black text-amber-600 hover:text-amber-800 hover:underline bg-amber-50/50 px-2.5 py-1 rounded-lg border border-amber-100 transition flex items-center gap-0.5 shadow-sm">
-                                        ⚙️ Intervensi Manual
-                                    </a>
+                                   @if($placement->status_pencocokan === 'rekomendasi')
+            <form action="{{ route('admin.placements.acc', $placement->id) }}" method="POST" onsubmit="return confirm('ACC siswa ini untuk Prakerin di perusahaan tersebut?');">
+                @csrf
+                <button type="submit" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-emerald-200">
+                    ✅ ACC Hubin
+                </button>
+            </form>
+        @endif
+
+        @if($placement->status_pencocokan !== 'final')
+            <a href="{{ route('admin.placements.edit', $placement->id) }}" class="bg-amber-50 text-amber-600 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-amber-200">
+                ⚙️ Intervensi Manual
+            </a>
+        @endif
                                 </div>
                         
                                 @if($placement->placement_method === 'MANUAL_OVERRIDE')

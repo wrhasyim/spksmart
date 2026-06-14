@@ -81,6 +81,7 @@ Route::middleware(['auth'])->group(function () {
     // Intervensi Manual (Manual Override)
     Route::get('/placements/{placement}/edit', [SpkController::class, 'edit'])->name('admin.placements.edit');
     Route::put('/placements/{placement}', [SpkController::class, 'update'])->name('admin.placements.update');
+Route::post('/placements/{placement}/acc', [SpkController::class, 'accHubin'])->name('admin.placements.acc');
 
     // ------------------------------------------
     // DOKUMEN & EXPORT (RIWAYAT)
