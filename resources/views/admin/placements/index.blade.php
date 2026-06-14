@@ -51,9 +51,9 @@
                 📊 Draft (Excel)
             </a>
             
-            <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Proses ulang kalkulasi SMART? Data yang sudah FINAL tidak akan terganggu.');" class="w-full sm:w-auto flex-1">
+            <form action="{{ route('admin.spk.generate') }}" method="POST" id="generateSpkForm" class="w-full sm:w-auto flex-1">
                 @csrf
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center text-sm gap-2">
+                <button type="button" id="generateBtn" onclick="confirmGenerate()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center text-sm gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     Proses Algoritma SMART SPK
                 </button>
@@ -140,7 +140,11 @@
                                             <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-blue-50 text-blue-800 border border-blue-200 tracking-wider">⏳ Menunggu ACC</span>
                                         @endif
                                     @else
-                                        <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-red-50 text-red-800 border border-red-200 tracking-wider">Perlu Penilaian</span>
+                                        @if($placement->status_pencocokan === 'waiting_list')
+                                            <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-amber-50 text-amber-800 border border-amber-200 tracking-wider">Menunggu Slot Industri</span>
+                                        @else
+                                            <span class="px-3 py-1 text-[10px] font-black rounded-lg bg-red-50 text-red-800 border border-red-200 tracking-wider">Butuh Pembinaan</span>
+                                        @endif
                                     @endif
                                     
                                     <button type="button" onclick="openCalcModal({{ $placement->id }})" class="text-[11px] font-extrabold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50/50 px-2.5 py-1 rounded-lg border border-blue-100 transition">
@@ -307,6 +311,18 @@
 @endforeach
 
 <script>
+    // JS Mencegah Double Click / Spam Click di Tombol Generate
+    function confirmGenerate() {
+        if(confirm('Proses ulang kalkulasi SMART? Data yang sudah FINAL tidak akan terganggu.')) {
+            const btn = document.getElementById('generateBtn');
+            btn.innerHTML = '⏳ Sedang Memproses...'; // Ubah teks tombol
+            btn.classList.add('opacity-70', 'cursor-not-allowed'); // Beri efek mati
+            btn.disabled = true; // Kunci tombolnya
+            document.getElementById('generateSpkForm').submit(); // Eksekusi form
+        }
+    }
+
+    // Modal Script
     function openCalcModal(id) { 
         document.getElementById('calc-modal-' + id).classList.remove('hidden'); 
     }

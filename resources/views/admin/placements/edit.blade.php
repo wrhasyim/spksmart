@@ -5,6 +5,13 @@
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
     
+    @if (session('error'))
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-4 rounded-xl shadow-sm font-medium text-sm flex items-center animate-fade-in">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="flex justify-between items-center border-b border-gray-200 pb-4">
         <div>
             <h1 class="text-xl font-black text-gray-900">⚙️ Intervensi Manual Penempatan</h1>
@@ -24,7 +31,7 @@
             <div class="flex items-center gap-3 mt-1 text-sm font-medium text-gray-500">
                 <span class="bg-gray-100 px-2 py-0.5 rounded">{{ $placement->student->nisn ?? 'NISN Kosong' }}</span>
                 <span>{{ $placement->student->major->name }} ({{ $placement->student->major->code }})</span>
-                <span>Gender: {{ $placement->student->gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</span>
+                <span class="font-bold {{ $placement->student->gender === 'L' ? 'text-blue-600' : 'text-pink-600' }}">Gender: {{ $placement->student->gender === 'L' ? 'Laki-laki' : 'Perempuan' }}</span>
             </div>
             
             <div class="mt-3 text-xs">
@@ -32,7 +39,7 @@
                 @if($placement->status_pencocokan === 'rekomendasi')
                     <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Rekomendasi Sistem</span>
                 @elseif($placement->status_pencocokan === 'waiting_list')
-                    <span class="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Waiting List (Kuota Habis)</span>
+                    <span class="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Menunggu Slot Industri</span>
                 @else
                     <span class="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">Pembinaan (Gagal Nilai)</span>
                 @endif
@@ -54,18 +61,18 @@
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Perusahaan & Gelombang Tujuan <span class="text-red-500">*</span></label>
                 <select name="company_slot_id" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-3 bg-white font-medium">
-                    <option value="">-- Pilih Gelombang Industri --</option>
-                    @foreach($companySlots as $slot)
+                    <option value="">-- Pilih Gelombang Industri (Sisa Kuota Tersedia) --</option>
+                    @forelse($companySlots as $slot)
                         @php
-                            // Ambil info sisa kuota (Bisa dipindah ke controller agar lebih bersih, ini contoh cepat)
-                            $terisi = \App\Models\Placement::where('company_slot_id', $slot->id)->where('status_pencocokan', 'final')->count();
-                            $sisa = $slot->quota - $terisi;
+                            $sisa = $slot->quota - ($slot->terisi ?? 0);
                             $isSelected = ($placement->company_slot_id === $slot->id) ? 'selected' : '';
                         @endphp
                         <option value="{{ $slot->id }}" {{ $isSelected }}>
-                            {{ $slot->company->name }} - {{ $slot->batch_name }} (Sisa Kuota: {{ $sisa > 0 ? $sisa : 'Penuh' }})
+                            {{ $slot->company->name }} - {{ $slot->batch_name }} (Sisa Kuota: {{ $sisa }})
                         </option>
-                    @endforeach
+                    @empty
+                        <option value="" disabled>-- Maaf, tidak ada slot tersisa untuk gender ini --</option>
+                    @endforelse
                 </select>
                 @error('company_slot_id') <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p> @enderror
             </div>

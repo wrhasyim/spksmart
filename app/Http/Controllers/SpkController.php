@@ -75,13 +75,32 @@ class SpkController extends Controller
     // FITUR: MANUAL OVERRIDE (INTERVENSI MANUAL)
     // ========================================================
 
+    // ========================================================
+    // FITUR: MANUAL OVERRIDE (INTERVENSI MANUAL)
+    // ========================================================
+
     public function edit(Placement $placement)
     {
         $placement->load(['student.major', 'student.assessment', 'company', 'companySlot']);
         
+        $studentGender = $placement->student->gender;
+
+        // Load slot beserta jumlah yang terisi, lalu langsung FILTER di level query dan koleksi
         $companySlots = CompanySlot::with('company')
+            ->withCount(['placements as terisi' => function ($query) {
+                $query->where('status_pencocokan', 'final');
+            }])
             ->where('academic_year_id', $placement->academic_year_id)
-            ->get();
+            // 1. FILTER GENDER: Tampilkan yang 'Semua' atau yang sesuai dengan gender siswa
+            ->where(function($q) use ($studentGender) {
+                $q->where('gender_requirement', 'Semua')
+                  ->orWhere('gender_requirement', $studentGender);
+            })
+            ->get()
+            // 2. FILTER KUOTA: Sembunyikan (*hide*) jika sisa kuota sudah habis/minus
+            ->filter(function($slot) {
+                return ($slot->quota - $slot->terisi) > 0;
+            });
 
         return view('admin.placements.edit', compact('placement', 'companySlots'));
     }
@@ -94,6 +113,25 @@ class SpkController extends Controller
         ]);
 
         $slot = CompanySlot::findOrFail($validated['company_slot_id']);
+        $studentGender = $placement->student->gender;
+
+        // --- VALIDASI KEAMANAN BACK-END ---
+
+        // 1. Cegah paksaan jika gender tidak sesuai
+        if ($slot->gender_requirement !== 'Semua' && $slot->gender_requirement !== $studentGender) {
+            return back()->with('error', 'Gagal: Gender siswa tidak memenuhi syarat perusahaan ini.')->withInput();
+        }
+
+        // 2. Cegah paksaan jika kuota benar-benar sudah penuh
+        $terisi = \App\Models\Placement::where('company_slot_id', $slot->id)
+            ->where('status_pencocokan', 'final')
+            ->count();
+            
+        if (($slot->quota - $terisi) <= 0) {
+            return back()->with('error', 'Gagal: Kuota untuk industri ini sudah penuh, silakan pilih industri lain.')->withInput();
+        }
+
+        // --- JIKA AMAN, LANJUTKAN PROSES ---
 
         $placement->update([
             'company_id' => $slot->company_id,
