@@ -50,15 +50,15 @@
                         <p class="text-xs text-gray-500 mt-0.5">📍 {{ $company->address ?: 'Alamat belum diatur' }}</p>
                     </div>
                     <div>
-                        <a href="{{ route('admin.placements.export_pdf_surat', [$company->id, 'academic_year_id' => $selectedYearId]) }}" target="_blank" class="inline-flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-4 py-2 rounded-xl transition">
-                            🖨️ Cetak Surat Pengantar (PDF)
+                        <a href="{{ route('admin.placements.export_pdf_surat', [$company->id, 'academic_year_id' => $selectedYearId]) }}" target="_blank" class="inline-flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-4 py-2 rounded-xl transition shadow-sm">
+                            📄 Cetak Surat Pengantar (PDF)
                         </a>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-100 text-sm">
-                        <thead class="bg-gray-50/30 text-gray-500 font-bold text-xs uppercase tracking-wider">
+                <div class="overflow-x-auto max-h-[300px] overflow-y-auto relative">
+                    <table class="min-w-full divide-y divide-gray-100 text-sm relative">
+                        <thead class="bg-gray-50/90 text-gray-500 font-bold text-xs uppercase tracking-wider sticky top-0 z-10 backdrop-blur-sm">
                             <tr>
                                 <th class="px-6 py-3 text-left">Nama Siswa</th>
                                 <th class="px-6 py-3 text-left">NISN / Kelas</th>
@@ -95,14 +95,24 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <div class="bg-gray-50/50 px-6 py-3 border-t border-gray-100 text-xs font-bold text-gray-500 text-right">
+                    Total: {{ $company->placements->count() }} Siswa Lolos
+                </div>
             </div>
         @empty
             <div class="bg-white rounded-2xl border border-gray-200 p-12 text-center shadow-sm">
-                <div class="text-gray-300 text-5xl mb-3">📂</div>
+                <div class="text-gray-300 text-5xl mb-3">📭</div>
                 <h3 class="text-base font-bold text-gray-700">Belum Ada Riwayat Penempatan</h3>
                 <p class="text-xs text-gray-400 mt-1">Belum ada siswa yang berstatus FINAL / Lolos Prakerin pada filter terpilih.</p>
             </div>
         @endforelse
+
+        @if($companiesWithPlacements->hasPages())
+            <div class="mt-8 pt-4">
+                {{ $companiesWithPlacements->links() }}
+            </div>
+        @endif
     </div>
 </div>
 @endsection

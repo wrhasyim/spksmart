@@ -17,6 +17,9 @@ class PlacementHistoryController extends Controller
     /**
      * Tampilkan Riwayat Penempatan yang Sudah FINAL / DI-ACC
      */
+    /**
+     * Tampilkan Riwayat Penempatan yang Sudah FINAL / DI-ACC
+     */
     public function index(Request $request)
     {
         $activeYear = AcademicYear::where('is_active', true)->first();
@@ -25,28 +28,33 @@ class PlacementHistoryController extends Controller
         $selectedMajorId = $request->get('major_id');
         $majors = Major::all();
 
-        // Ambil data penempatan final grouped by company untuk mempermudah cetak surat pengantar per industri
-        $companiesWithPlacements = Company::whereHas('placements', function($q) use ($selectedYearId) {
+        // Ambil data penempatan final menggunakan paginate(5)
+        $companiesWithPlacements = Company::whereHas('placements', function($q) use ($selectedYearId, $selectedMajorId) {
                 $q->where('status_pencocokan', 'final')
                   ->where('academic_year_id', $selectedYearId);
+                  
+                // Filter jurusan langsung di level query jika dipilih
+                if ($selectedMajorId) {
+                    $q->whereHas('student', function($sq) use ($selectedMajorId) {
+                        $sq->where('major_id', $selectedMajorId);
+                    });
+                }
             })
             ->with(['placements' => function($q) use ($selectedYearId, $selectedMajorId) {
                 $q->where('status_pencocokan', 'final')
-                  ->where('academic_year_id', $selectedYearId)
-                  ->with(['student' => function($sq) use ($selectedMajorId) {
-                      if ($selectedMajorId) {
-                          $sq->where('major_id', $selectedMajorId);
-                      }
-                      $sq->with('major');
-                  }, 'companySlot']);
+                  ->where('academic_year_id', $selectedYearId);
+                  
+                // Terapkan filter jurusan juga pada relasi placement-nya
+                if ($selectedMajorId) {
+                    $q->whereHas('student', function($sq) use ($selectedMajorId) {
+                        $sq->where('major_id', $selectedMajorId);
+                    });
+                }
+                $q->with(['student.major', 'companySlot']);
             }])
-            ->get()
-            ->filter(function($company) {
-                // Saring jika ada filter jurusan dan datanya kosong
-                return $company->placements->contains(function($p) {
-                    return $p->student !== null;
-                });
-            });
+            // Paginate 5 perusahaan per halaman, dan pastikan parameter GET dibawa
+            ->paginate(5) 
+            ->withQueryString(); 
 
         return view('admin.placements.history', compact(
             'companiesWithPlacements', 
@@ -80,19 +88,20 @@ class PlacementHistoryController extends Controller
         // Ambil data setting aplikasi dinamis
         $settings = DB::table('app_settings')->first();
 
-        // Ambil daftar siswa yang lolos di PT ini
+        // Ambil SEMUA siswa yang lolos di PT ini (Tanpa batasan limit)
+        // Jumlahnya otomatis menyesuaikan dengan hasil penempatan SMART Engine yang sudah FINAL
         $placements = Placement::where('company_id', $company->id)
             ->where('academic_year_id', $academicYearId)
             ->where('status_pencocokan', 'final')
             ->with(['student.major', 'companySlot'])
-            ->get();
+            ->get(); // Kita hapus ->limit(10) di sini
 
         if ($placements->isEmpty()) {
             return redirect()->back()->with('error', 'Tidak ada siswa yang terdaftar secara FINAL di perusahaan ini.');
         }
 
         // Generate PDF menggunakan library barryvdh/laravel-dompdf
-        $pdf = Pdf::loadView('admin.placements.pdf_surat_pengantar', [
+        $pdf = Pdf::loadView('admin.placements.letter', [
             'company' => $company,
             'placements' => $placements,
             'settings' => $settings,

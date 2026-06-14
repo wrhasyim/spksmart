@@ -20,13 +20,11 @@ use App\Http\Controllers\CriterionController;
 use App\Http\Controllers\MajorController;
 use App\Http\Controllers\SettingController;
 
+
 // ==========================================
 // 1. HALAMAN PUBLIK & TRACKER NISN
 // ==========================================
-Route::get('/', function () {
-    $setting = AppSetting::first();
-    return view('welcome', compact('setting'));
-})->name('welcome');
+Route::get('/', [HomeController::class, 'welcome'])->name('welcome');
 
 Route::post('/track_nisn', function (Request $request) {
     $request->validate(['nisn' => 'required|string']);
