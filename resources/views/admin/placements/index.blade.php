@@ -20,8 +20,8 @@
     @endif
 
     <form id="filterForm" method="GET" action="{{ url()->current() }}" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <label for="academicYearSelect" class="text-sm font-extrabold text-gray-700">Tinjau Data Periode:</label>
+        <div class="flex items-center gap-3 w-full md:w-auto">
+            <label for="academicYearSelect" class="text-sm font-extrabold text-gray-700 whitespace-nowrap">Tinjau Data Periode:</label>
             <select name="academic_year_id" id="academicYearSelect" onchange="document.getElementById('filterForm').submit()" class="block w-full md:w-64 rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-4 py-2.5 bg-gray-50 focus:bg-white font-bold transition">
                 @foreach($allYears as $year)
                     <option value="{{ $year->id }}" {{ $selectedYearId == $year->id ? 'selected' : '' }}>
@@ -35,29 +35,30 @@
         </div>
     </form>
 
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-5 gap-4">
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center border-b border-gray-100 pb-5 gap-5">
         <div>
             <h1 class="text-2xl font-black text-gray-900">Manajemen Proses SPK Aktif</h1>
             <p class="text-sm text-gray-500 mt-1">Jalankan algoritma SMART, tinjau hasil kalkulasi, dan berikan persetujuan (ACC) penempatan.</p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-            <a href="{{ route('admin.spk.export_excel', ['academic_year_id' => $selectedYearId]) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl shadow-sm font-bold transition flex items-center text-sm gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                Export Excel
+        
+        <div class="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
+            
+            <a href="{{ route('admin.spk.print_pdf', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="w-full sm:w-auto bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center text-sm shadow-sm gap-2">
+                📄 Draft (PDF)
             </a>
-
-            <a href="{{ route('admin.spk.print_pdf', ['academic_year_id' => $selectedYearId]) }}" target="_blank" class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-5 py-2.5 rounded-xl font-bold transition flex items-center text-sm gap-2 shadow-sm">
-                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                Cetak PDF
+            
+            <a href="{{ route('admin.spk.export_excel', ['academic_year_id' => $selectedYearId]) }}" class="w-full sm:w-auto bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center text-sm shadow-sm gap-2">
+                📊 Draft (Excel)
             </a>
-    
-            <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Sistem akan menghitung ulang nilai seluruh siswa dan mencocokkannya secara otomatis dengan kuota perusahaan. Lanjutkan?')">
+            
+            <form action="{{ route('admin.spk.generate') }}" method="POST" onsubmit="return confirm('Proses ulang kalkulasi SMART? Data yang sudah FINAL tidak akan terganggu.');" class="w-full sm:w-auto flex-1">
                 @csrf
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl shadow-md font-extrabold transition text-sm flex items-center gap-2">
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md px-6 py-2.5 rounded-xl font-bold transition flex items-center justify-center text-sm gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    Proses Algoritma SMART
+                    Proses Algoritma SMART SPK
                 </button>
             </form>
+            
         </div>
     </div>
 
@@ -76,21 +77,25 @@
                 <tbody class="bg-white divide-y divide-gray-100">
                     @forelse($placements as $placement)
                     <tr class="hover:bg-indigo-50/20 transition duration-150">
+                        
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-extrabold text-gray-900">{{ $placement->student->name }}</div>
                             <div class="text-xs font-bold text-gray-400 mt-0.5 tracking-wide">NISN: {{ $placement->student->nisn }}</div>
                         </td>
+                        
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-bold text-gray-800">{{ $placement->student->class_name ?? '-' }}</div>
                             <div class="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 inline-block mt-1">
                                 {{ $placement->student->major->code ?? '-' }}
                             </div>
                         </td>
+                        
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 px-3.5 py-1.5 rounded-xl text-sm font-black shadow-sm">
                                 {{ number_format($placement->final_smart_score, 2) }}
                             </span>
                         </td>
+                        
                         <td class="px-6 py-4 max-w-xs">
                             @if($placement->company)
                                 <div class="font-extrabold text-green-800 truncate text-sm">{{ $placement->company->name }}</div>
@@ -123,6 +128,7 @@
                                 </div>
                             @endif
                         </td>
+                        
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                             <div class="flex flex-col gap-1.5 items-end">
                                 
@@ -143,20 +149,20 @@
                                 </div>
                         
                                 <div class="flex items-center gap-2 mt-0.5">
-                                   @if($placement->status_pencocokan === 'rekomendasi')
-            <form action="{{ route('admin.placements.acc', $placement->id) }}" method="POST" onsubmit="return confirm('ACC siswa ini untuk Prakerin di perusahaan tersebut?');">
-                @csrf
-                <button type="submit" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-emerald-200">
-                    ✅ ACC Hubin
-                </button>
-            </form>
-        @endif
+                                    @if($placement->status_pencocokan === 'rekomendasi')
+                                        <form action="{{ route('admin.placements.acc', $placement->id) }}" method="POST" onsubmit="return confirm('ACC siswa ini untuk Prakerin di perusahaan tersebut?');">
+                                            @csrf
+                                            <button type="submit" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-emerald-200">
+                                                ✅ ACC Hubin
+                                            </button>
+                                        </form>
+                                    @endif
 
-        @if($placement->status_pencocokan !== 'final')
-            <a href="{{ route('admin.placements.edit', $placement->id) }}" class="bg-amber-50 text-amber-600 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-amber-200">
-                ⚙️ Intervensi Manual
-            </a>
-        @endif
+                                    @if($placement->status_pencocokan !== 'final')
+                                        <a href="{{ route('admin.placements.edit', $placement->id) }}" class="bg-amber-50 text-amber-600 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-lg text-xs transition border border-amber-200">
+                                            ⚙️ Intervensi Manual
+                                        </a>
+                                    @endif
                                 </div>
                         
                                 @if($placement->placement_method === 'MANUAL_OVERRIDE')
